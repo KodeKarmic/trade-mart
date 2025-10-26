@@ -13,7 +13,8 @@ public class TradeRepositoryImpl implements TradeRepositoryCustom {
 
   private final JdbcTemplate jdbcTemplate;
 
-  @PersistenceContext private EntityManager em;
+  @PersistenceContext
+  private EntityManager em;
 
   public TradeRepositoryImpl(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
@@ -35,18 +36,23 @@ public class TradeRepositoryImpl implements TradeRepositoryCustom {
         "INSERT INTO trades (trade_id, version, price, quantity, maturity_date, status, created_at, updated_at) "
             + "VALUES (?, ?, ?, ?, ?, ?, now(), now()) "
             + "ON CONFLICT (trade_id) DO UPDATE SET "
-            + "version = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.version ELSE trades.version END, "
-            + "price = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.price ELSE trades.price END, "
-            + "quantity = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.quantity ELSE trades.quantity END, "
-            + "maturity_date = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.maturity_date ELSE trades.maturity_date END, "
-            + "status = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.status ELSE trades.status END, "
-            + "updated_at = CASE WHEN EXCLUDED.version >= trades.version THEN now() ELSE trades.updated_at END;";
+            + "version = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.version "
+            + "ELSE trades.version END, "
+            + "price = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.price "
+            + "ELSE trades.price END, "
+            + "quantity = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.quantity "
+            + "ELSE trades.quantity END, "
+            + "maturity_date = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.maturity_date "
+            + "ELSE trades.maturity_date END, "
+            + "status = CASE WHEN EXCLUDED.version >= trades.version THEN EXCLUDED.status "
+            + "ELSE trades.status END, "
+            + "updated_at = CASE WHEN EXCLUDED.version >= trades.version THEN now() "
+            + "ELSE trades.updated_at END;";
 
     jdbcTemplate.update(sql, tradeId, version, price, quantity, maturityDate, status);
 
     // Fetch the managed entity from EntityManager to return a TradeEntity
-    var q =
-        em.createQuery("SELECT t FROM TradeEntity t WHERE t.tradeId = :tradeId", TradeEntity.class);
+    var q = em.createQuery("SELECT t FROM TradeEntity t WHERE t.tradeId = :tradeId", TradeEntity.class);
     q.setParameter("tradeId", tradeId);
     return q.getSingleResult();
   }

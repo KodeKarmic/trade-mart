@@ -1,6 +1,16 @@
 package com.trademart.tradestore.model;
 
-import jakarta.persistence.*;
+import jakarta.persistence.Column;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -8,12 +18,13 @@ import java.time.LocalDate;
 @Entity
 @Table(
     name = "trades",
-    indexes = {@Index(name = "idx_trade_tradeid", columnList = "tradeId")},
+    indexes = {
+        @Index(name = "idx_trade_tradeid", columnList = "tradeId")
+    },
     uniqueConstraints = {
-      @UniqueConstraint(
-          name = "uc_trade_tradeid",
-          columnNames = {"tradeId"})
-    })
+        @UniqueConstraint(name = "uc_trade_tradeid", columnNames = { "tradeId" })
+    }
+)
 public class TradeEntity {
 
   @Id
@@ -40,9 +51,11 @@ public class TradeEntity {
 
   private Instant updatedAt;
 
-  @Version private Integer optLock;
+  @Version
+  private Integer optLock;
 
-  public TradeEntity() {}
+  public TradeEntity() {
+  }
 
   public TradeEntity(
       String tradeId,
