@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      runIntegration:
+        description: 'Set to true to run integration tests (requires Docker)'
+        required: false
+        default: 'false'
+
+jobs:
+  build:
+    name: Unit Tests & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*', '**/gradle/wrapper/gradle-wrapper.properties') }}
+      - name: Run unit tests
+        run: |
+          ./gradlew test --no-daemon
+
+  integration:
+    name: Integration Tests (Docker required)
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event.inputs.runIntegration == 'true' || secrets.RUN_INTEGRATION_TESTS == 'true' }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Ensure Docker is available
+        run: |
+          docker version
+      - name: Run integration tests (Postgres + Mongo via Testcontainers)
+        run: |
+          ./gradlew clean integrationTest --no-daemon --info
+
+# Notes:
+# - Integration tests are gated. By default they are skipped. To enable them:
+#   * Use "Run workflow" (workflow_dispatch) and set input runIntegration=true, or
+#   * Set the repository secret RUN_INTEGRATION_TESTS=true to enable on pushes/PRs.
+# - The integration tests require Docker (Testcontainers). GitHub-hosted runners (ubuntu-latest) include Docker.
+# - Adjust the gating condition to match your CI policy (self-hosted runners, branch rules, etc.).

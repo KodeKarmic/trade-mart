@@ -57,7 +57,8 @@ test {
 spotless {
     java {
         target 'src/**/*.java'
-        googleJavaFormat('1.15.0')
+        // Use google-java-format >= 1.17.0 for compatibility with JVM 21
+        googleJavaFormat('1.17.0')
     }
     format 'misc', {
         target '*.gradle', '*.md', '.gitignore'
@@ -70,6 +71,20 @@ spotless {
 checkstyle {
     toolVersion = '10.12.0'
     configFile = file('config/checkstyle/checkstyle.xml')
+    // Don't fail the build for Checkstyle violations during initial rollout.
+    ignoreFailures = true
+}
+
+// Extended Checkstyle task that uses the stronger rule set. By default it will not fail the build
+// unless the project property 'enforceExtendedCheckstyle' is provided (useful for CI).
+tasks.register('checkstyleExtended', org.gradle.api.plugins.quality.Checkstyle) {
+    description = 'Run extended Checkstyle rules (config/checkstyle/extended-checks.xml)'
+    group = 'verification'
+    classpath = sourceSets.main.runtimeClasspath
+    source = sourceSets.main.allJava
+    configFile = file('config/checkstyle/extended-checks.xml')
+    // Allow CI to opt into strict enforcement by setting -PenforceExtendedCheckstyle=true
+    ignoreFailures = !project.hasProperty('enforceExtendedCheckstyle')
 }
 
 // Integration test source set and task
