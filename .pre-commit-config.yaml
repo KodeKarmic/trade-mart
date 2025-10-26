@@ -12,11 +12,11 @@ repos:
     hooks:
       - id: gradle-spotless-check
         name: Gradle Spotless Check
-        entry: ./gradlew spotlessCheck
+        entry: gradlew spotlessCheck
         language: system
         files: \.(java|gradle|md|gitignore)$
       - id: gradle-checkstyle
         name: Gradle Checkstyle Main
-        entry: ./gradlew checkstyleMain
+        entry: gradlew checkstyleMain
         language: system
         files: \.java$
