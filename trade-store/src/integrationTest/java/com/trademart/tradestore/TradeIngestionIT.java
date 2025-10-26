@@ -13,6 +13,8 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
@@ -35,20 +37,18 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class TradeIngestionIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:15-alpine")
-          .withDatabaseName("test")
-          .withUsername("test")
-          .withPassword("test");
+  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+      .withDatabaseName("test")
+      .withUsername("test")
+      .withPassword("test");
 
   @Container
-  static MongoDBContainer mongo =
-      new MongoDBContainer("mongo:6.0.8")
-          // use a log-based wait strategy and extend the startup timeout to be more
-          // tolerant of transient socket/read issues during Mongo replica set
-          // initialization
-          .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
-          .withStartupTimeout(Duration.ofSeconds(120));
+  static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8")
+      // use a log-based wait strategy and extend the startup timeout to be more
+      // tolerant of transient socket/read issues during Mongo replica set
+      // initialization
+      .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
+      .withStartupTimeout(Duration.ofSeconds(120));
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -61,13 +61,17 @@ public class TradeIngestionIT {
     registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
   }
 
-  @LocalServerPort int port;
+  @LocalServerPort
+  int port;
 
-  @Autowired TestRestTemplate restTemplate;
+  @Autowired
+  TestRestTemplate restTemplate;
 
-  @Autowired TradeRepository tradeRepository;
+  @Autowired
+  TradeRepository tradeRepository;
 
-  @Autowired TradeHistoryRepository tradeHistoryRepository;
+  @Autowired
+  TradeHistoryRepository tradeHistoryRepository;
 
   @BeforeAll
   static void beforeAll() throws Exception {
@@ -82,8 +86,7 @@ public class TradeIngestionIT {
       try {
         // prefer mongosh (newer images); fall back to legacy 'mongo' if present
         try {
-          var res =
-              mongo.execInContainer("mongosh", "--eval", "db.adminCommand({ping:1})", "--quiet");
+          var res = mongo.execInContainer("mongosh", "--eval", "db.adminCommand({ping:1})", "--quiet");
           if (res != null && res.getExitCode() == 0) {
             String out = res.getStdout();
             if (out != null && out.toLowerCase().contains("ok")) {
@@ -132,15 +135,41 @@ public class TradeIngestionIT {
   }
 
   @Test
+  void pastMaturityShouldReturnStructuredError() throws Exception {
+    String url = "http://localhost:" + port + "/trades";
+
+    // use a clearly past maturity date so the validator rejects it
+    String body = "{"
+        + "\"tradeId\": \"IT-PAST\","
+        + "\"version\": 1,"
+        + "\"maturityDate\": \"2000-01-01\","
+        + "\"price\": 10.00"
+        + "}";
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.setContentType(MediaType.APPLICATION_JSON);
+    HttpEntity<String> req = new HttpEntity<>(body, headers);
+
+    ResponseEntity<String> resp = restTemplate.postForEntity(url, req, String.class);
+    assertThat(resp.getStatusCode().is4xxClientError()).isTrue();
+
+    // parse JSON body and assert structured error fields
+    ObjectMapper om = new ObjectMapper();
+    Map<String, Object> map = om.readValue(resp.getBody(), Map.class);
+    assertThat(map).containsKey("errorCode");
+    assertThat(map.get("errorCode")).isEqualTo("MATURITY_PAST");
+    assertThat(map.get("message")).asString().containsIgnoringCase("maturity");
+  }
+
+  @Test
   void validTradeShouldBePersistedAndReturn201() {
     String url = "http://localhost:" + port + "/trades";
-    String body =
-        "{"
-            + "\"tradeId\": \"IT-T1\","
-            + "\"version\": 1,"
-            + "\"maturityDate\": \"2030-01-01\","
-            + "\"price\": 123.45"
-            + "}";
+    String body = "{"
+        + "\"tradeId\": \"IT-T1\","
+        + "\"version\": 1,"
+        + "\"maturityDate\": \"2030-01-01\","
+        + "\"price\": 123.45"
+        + "}";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -171,11 +200,10 @@ public class TradeIngestionIT {
     if (mdObj instanceof LocalDate) {
       mdValue = (LocalDate) mdObj;
     } else if (mdObj instanceof java.util.Date) {
-      mdValue =
-          ((java.util.Date) mdObj)
-              .toInstant()
-              .atZone(java.time.ZoneId.systemDefault())
-              .toLocalDate();
+      mdValue = ((java.util.Date) mdObj)
+          .toInstant()
+          .atZone(java.time.ZoneId.systemDefault())
+          .toLocalDate();
     } else {
       mdValue = LocalDate.parse(mdObj.toString());
     }
