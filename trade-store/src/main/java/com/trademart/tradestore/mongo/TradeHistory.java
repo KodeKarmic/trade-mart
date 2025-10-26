@@ -8,7 +8,8 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "trade_history")
 public class TradeHistory {
 
-  @Id private String id;
+  @Id
+  private String id;
 
   private String tradeId;
 
@@ -24,7 +25,10 @@ public class TradeHistory {
 
   private Instant timestamp;
 
-  public TradeHistory() {}
+  private Long sequence;
+
+  public TradeHistory() {
+  }
 
   public String getId() {
     return id;
@@ -88,5 +92,13 @@ public class TradeHistory {
 
   public void setTimestamp(Instant timestamp) {
     this.timestamp = timestamp;
+  }
+
+  public Long getSequence() {
+    return sequence;
+  }
+
+  public void setSequence(Long sequence) {
+    this.sequence = sequence;
   }
 }

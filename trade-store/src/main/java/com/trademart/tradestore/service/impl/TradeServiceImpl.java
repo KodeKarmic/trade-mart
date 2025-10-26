@@ -6,26 +6,30 @@ import com.trademart.tradestore.model.TradeStatus;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
 import com.trademart.tradestore.service.TradeService;
+import com.trademart.tradestore.service.TradeSequencer;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import com.trademart.tradestore.exception.TradeRejectedException;
 
 @Service
 public class TradeServiceImpl implements TradeService {
 
   private final TradeRepository tradeRepository;
   private final TradeHistoryRepository tradeHistoryRepository;
+  private final TradeSequencer tradeSequencer;
 
   @Autowired
   public TradeServiceImpl(
-      TradeRepository tradeRepository, TradeHistoryRepository tradeHistoryRepository) {
+      TradeRepository tradeRepository,
+      TradeHistoryRepository tradeHistoryRepository,
+      TradeSequencer tradeSequencer) {
     this.tradeRepository = tradeRepository;
     this.tradeHistoryRepository = tradeHistoryRepository;
+    this.tradeSequencer = tradeSequencer;
   }
 
   @Override
@@ -37,14 +41,13 @@ public class TradeServiceImpl implements TradeService {
     if (existingOpt.isPresent()) {
       before = existingOpt.get();
       if (dto.getVersion() != null && dto.getVersion() < before.getVersion()) {
-        throw new ResponseStatusException(
-            HttpStatus.BAD_REQUEST, "incoming version is lower than existing");
+        throw new TradeRejectedException("incoming version is lower than existing");
       }
     }
 
     // Maturity date validation: reject trades that are already expired
     if (dto.getMaturityDate() != null && dto.getMaturityDate().isBefore(LocalDate.now())) {
-      throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "maturity date is in the past");
+      throw new TradeRejectedException("maturity date is in the past");
     }
 
     TradeEntity entity = existingOpt.orElseGet(() -> new TradeEntity());
@@ -55,17 +58,22 @@ public class TradeServiceImpl implements TradeService {
     entity.setMaturityDate(dto.getMaturityDate());
     entity.setStatus(TradeStatus.ACTIVE);
     entity.setUpdatedAt(Instant.now());
-    if (entity.getCreatedAt() == null) entity.setCreatedAt(Instant.now());
+    if (entity.getCreatedAt() == null)
+      entity.setCreatedAt(Instant.now());
+
+    // assign ingest sequence for ordering (must be done before persisting the row)
+    long seq = tradeSequencer.nextSequence();
+    entity.setIngestSequence(seq);
 
     // Use an atomic DB upsert to avoid concurrent-insert races.
-    TradeEntity saved =
-        tradeRepository.upsertTrade(
-            entity.getTradeId(),
-            entity.getVersion(),
-            entity.getPrice(),
-            entity.getQuantity(),
-            entity.getMaturityDate(),
-            entity.getStatus() == null ? null : entity.getStatus().name());
+    TradeEntity saved = tradeRepository.upsertTrade(
+        entity.getTradeId(),
+        entity.getVersion(),
+        entity.getPrice(),
+        entity.getQuantity(),
+        entity.getMaturityDate(),
+        entity.getIngestSequence(),
+        entity.getStatus() == null ? null : entity.getStatus().name());
 
     // write history doc
     var hist = new com.trademart.tradestore.mongo.TradeHistory();
@@ -88,6 +96,9 @@ public class TradeServiceImpl implements TradeService {
     hist.setAfter(afterMap);
     hist.setActor("system");
     hist.setTimestamp(Instant.now());
+    // include the same sequence in history
+    hist.setSequence(entity.getIngestSequence());
+    afterMap.put("sequence", entity.getIngestSequence());
 
     tradeHistoryRepository.save(hist);
 

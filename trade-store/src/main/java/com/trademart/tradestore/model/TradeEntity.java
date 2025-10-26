@@ -16,15 +16,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(
-    name = "trades",
-    indexes = {
-        @Index(name = "idx_trade_tradeid", columnList = "tradeId")
-    },
-    uniqueConstraints = {
-        @UniqueConstraint(name = "uc_trade_tradeid", columnNames = { "tradeId" })
-    }
-)
+@Table(name = "trades", indexes = {
+    @Index(name = "idx_trade_tradeid", columnList = "tradeId")
+}, uniqueConstraints = {
+    @UniqueConstraint(name = "uc_trade_tradeid", columnNames = { "tradeId" })
+})
 public class TradeEntity {
 
   @Id
@@ -53,6 +49,9 @@ public class TradeEntity {
 
   @Version
   private Integer optLock;
+
+  @Column(name = "ingest_sequence")
+  private Long ingestSequence;
 
   public TradeEntity() {
   }
@@ -152,5 +151,13 @@ public class TradeEntity {
 
   public void setOptLock(Integer optLock) {
     this.optLock = optLock;
+  }
+
+  public Long getIngestSequence() {
+    return ingestSequence;
+  }
+
+  public void setIngestSequence(Long ingestSequence) {
+    this.ingestSequence = ingestSequence;
   }
 }

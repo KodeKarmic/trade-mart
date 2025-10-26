@@ -23,19 +23,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.springframework.web.server.ResponseStatusException;
+import com.trademart.tradestore.exception.TradeRejectedException;
 
 public class TradeServiceImplTest {
 
   private TradeRepository tradeRepository;
   private TradeHistoryRepository tradeHistoryRepository;
+  private com.trademart.tradestore.service.TradeSequencer tradeSequencer;
   private TradeServiceImpl service;
 
   @BeforeEach
   void setUp() {
     tradeRepository = mock(TradeRepository.class);
     tradeHistoryRepository = mock(TradeHistoryRepository.class);
-    service = new TradeServiceImpl(tradeRepository, tradeHistoryRepository);
+    tradeSequencer = mock(com.trademart.tradestore.service.TradeSequencer.class);
+    when(tradeSequencer.nextSequence()).thenReturn(42L);
+    service = new TradeServiceImpl(tradeRepository, tradeHistoryRepository, tradeSequencer);
   }
 
   @Test
@@ -54,7 +57,7 @@ public class TradeServiceImplTest {
     dto.setMaturityDate(LocalDate.now().plusDays(1));
 
     assertThatThrownBy(() -> service.createOrUpdateTrade(dto))
-        .isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(TradeRejectedException.class);
   }
 
   @Test
@@ -66,7 +69,7 @@ public class TradeServiceImplTest {
     saved.setVersion(1);
     saved.setPrice(new BigDecimal("9.99"));
 
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("NEW");
@@ -104,7 +107,7 @@ public class TradeServiceImplTest {
     saved.setTradeId("T-2");
     saved.setVersion(2);
     saved.setPrice(new BigDecimal("7.00"));
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("T-2");
@@ -133,7 +136,7 @@ public class TradeServiceImplTest {
     TradeEntity saved = new TradeEntity();
     saved.setTradeId("T-3");
     saved.setVersion(3);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("T-3");
@@ -161,7 +164,7 @@ public class TradeServiceImplTest {
     dto.setMaturityDate(LocalDate.now().minusDays(1));
 
     assertThatThrownBy(() -> service.createOrUpdateTrade(dto))
-        .isInstanceOf(ResponseStatusException.class);
+        .isInstanceOf(TradeRejectedException.class);
   }
 
   @Test
@@ -172,7 +175,7 @@ public class TradeServiceImplTest {
     saved.setTradeId("TODAY");
     saved.setVersion(1);
     saved.setMaturityDate(LocalDate.now());
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("TODAY");
@@ -194,7 +197,7 @@ public class TradeServiceImplTest {
     saved.setTradeId("NULLMD");
     saved.setVersion(1);
     saved.setMaturityDate(null);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("NULLMD");
@@ -216,7 +219,7 @@ public class TradeServiceImplTest {
   @Test
   void whenRepositorySaveThrows_thenExceptionPropagated() {
     when(tradeRepository.findByTradeId("BORKED")).thenReturn(Optional.empty());
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any()))
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
         .thenThrow(new RuntimeException("db down"));
 
     TradeDto dto = new TradeDto();
@@ -237,7 +240,7 @@ public class TradeServiceImplTest {
     TradeEntity saved = new TradeEntity();
     saved.setTradeId("HISTERR");
     saved.setVersion(1);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
 
     // make history save fail
     when(tradeHistoryRepository.save(any(TradeHistory.class)))
@@ -268,7 +271,7 @@ public class TradeServiceImplTest {
     saved.setTradeId("T-4");
     saved.setVersion(2);
     saved.setPrice(new BigDecimal("2.00"));
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("T-4");
@@ -298,7 +301,7 @@ public class TradeServiceImplTest {
     when(tradeRepository.findByTradeId(id)).thenReturn(Optional.empty());
 
     AtomicInteger saveCount = new AtomicInteger(0);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any()))
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
         .thenAnswer(
             invocation -> {
               saveCount.incrementAndGet();
@@ -307,12 +310,14 @@ public class TradeServiceImplTest {
               BigDecimal price = invocation.getArgument(2);
               Integer qty = invocation.getArgument(3);
               LocalDate md = invocation.getArgument(4);
-              String status = invocation.getArgument(5);
+              Long seq = invocation.getArgument(5);
+              String status = invocation.getArgument(6);
               TradeEntity e = new TradeEntity();
               e.setTradeId(tid);
               e.setVersion(ver == null ? 1 : ver);
               e.setPrice(price);
               e.setMaturityDate(md);
+              e.setIngestSequence(seq);
               return e;
             });
 
@@ -339,7 +344,8 @@ public class TradeServiceImplTest {
               }));
     }
 
-    for (Future<?> f : futures) f.get();
+    for (Future<?> f : futures)
+      f.get();
     ex.shutdownNow();
 
     assertThat(saveCount.get()).isEqualTo(threads);
@@ -357,7 +363,7 @@ public class TradeServiceImplTest {
     saved.setTradeId("BIG");
     saved.setVersion(1);
     saved.setPrice(big);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("BIG");
@@ -382,7 +388,7 @@ public class TradeServiceImplTest {
     TradeEntity savedNull = new TradeEntity();
     savedNull.setTradeId(null);
     savedNull.setVersion(1);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any()))
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(savedNull);
 
     TradeDto dtoNull = new TradeDto();
@@ -399,7 +405,7 @@ public class TradeServiceImplTest {
     TradeEntity savedBlank = new TradeEntity();
     savedBlank.setTradeId(" ");
     savedBlank.setVersion(1);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any()))
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
         .thenReturn(savedBlank);
 
     TradeDto dtoBlank = new TradeDto();

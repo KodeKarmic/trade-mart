@@ -6,7 +6,8 @@ import java.time.LocalDate;
 
 public interface TradeRepositoryCustom {
   /**
-   * Perform an atomic upsert of a trade row using Postgres ON CONFLICT DO UPDATE. Returns the
+   * Perform an atomic upsert of a trade row using Postgres ON CONFLICT DO UPDATE.
+   * Returns the
    * persisted TradeEntity after the operation.
    */
   TradeEntity upsertTrade(
@@ -15,5 +16,6 @@ public interface TradeRepositoryCustom {
       BigDecimal price,
       Integer quantity,
       LocalDate maturityDate,
+      Long ingestSequence,
       String status);
 }
