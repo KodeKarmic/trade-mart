@@ -1,0 +1,122 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.2.0'
+    id 'io.spring.dependency-management' version '1.1.0'
+    id 'checkstyle'
+    id 'com.diffplug.spotless' version '6.21.0'
+}
+
+group = 'com.trademart'
+version = '0.1.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'io.opentelemetry:opentelemetry-api:1.28.0'
+
+    // Streaming and persistence
+    implementation 'org.springframework.kafka:spring-kafka'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-data-mongodb'
+    runtimeOnly 'org.postgresql:postgresql'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    // Flyway for database migrations (ensures DB-level constraints in CI/integration)
+    implementation 'org.flywaydb:flyway-core'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.testcontainers:junit-jupiter:1.19.0'
+    testImplementation 'org.testcontainers:postgresql:1.19.0'
+    testImplementation 'org.testcontainers:mongodb:1.19.0'
+    testImplementation 'org.testcontainers:testcontainers:1.19.0'
+    testImplementation 'org.testcontainers:kafka:1.19.0'
+    // Embedded/in-memory MongoDB for tests
+    testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:3.4.6'
+    // In-memory JDBC for tests (so DataSource auto-config can succeed in unit tests)
+    testRuntimeOnly 'com.h2database:h2'
+}
+
+test {
+    useJUnitPlatform()
+    // Allow skipping integration tests via Gradle project property or system property.
+    // Usage: ./gradlew -PskipIntegration=true test
+    def skipProp = System.getProperty('skipIntegration') ?: (project.hasProperty('skipIntegration') ? project.property('skipIntegration') : 'false')
+    systemProperty 'skipIntegration', skipProp
+}
+
+// Spotless formatting configuration (basic)
+spotless {
+    java {
+        target 'src/**/*.java'
+        googleJavaFormat('1.15.0')
+    }
+    format 'misc', {
+        target '*.gradle', '*.md', '.gitignore'
+        trimTrailingWhitespace()
+        endWithNewline()
+    }
+}
+
+// Checkstyle basic configuration - points to config/checkstyle/checkstyle.xml
+checkstyle {
+    toolVersion = '10.12.0'
+    configFile = file('config/checkstyle/checkstyle.xml')
+}
+
+// Integration test source set and task
+sourceSets {
+    integrationTest {
+        java.srcDir file('src/integrationTest/java')
+        resources.srcDir file('src/integrationTest/resources')
+        compileClasspath += sourceSets.main.output + configurations.testRuntimeClasspath
+        runtimeClasspath += output + compileClasspath
+    }
+}
+
+configurations {
+    integrationTestImplementation.extendsFrom testImplementation
+    integrationTestRuntimeOnly.extendsFrom testRuntimeOnly
+}
+
+dependencies {
+    integrationTestImplementation 'org.springframework.boot:spring-boot-starter-test'
+    integrationTestImplementation 'org.testcontainers:junit-jupiter:1.19.0'
+    integrationTestImplementation 'org.testcontainers:postgresql:1.19.0'
+    integrationTestImplementation 'org.testcontainers:mongodb:1.19.0'
+    integrationTestImplementation 'org.testcontainers:testcontainers:1.19.0'
+}
+
+task integrationTest(type: Test) {
+    description = 'Runs integration tests.'
+    group = 'verification'
+    testClassesDirs = sourceSets.integrationTest.output.classesDirs
+    classpath = sourceSets.integrationTest.runtimeClasspath
+    useJUnitPlatform()
+    // pass skipIntegration into integration test JVM
+    def skipProp = System.getProperty('skipIntegration') ?: (project.hasProperty('skipIntegration') ? project.property('skipIntegration') : 'false')
+    systemProperty 'skipIntegration', skipProp
+    // Don't run integration tests if skipIntegration set to true
+    onlyIf {
+        def sys = System.getProperty('skipIntegration')
+        def prop = (project.hasProperty('skipIntegration') ? project.property('skipIntegration') : null)
+        !( (sys != null && sys.toString() == 'true') || (prop != null && prop.toString() == 'true') )
+    }
+}
+
+check.dependsOn integrationTest
+
+// Allow including integration tests into the standard 'test' lifecycle when requested.
+def includeIntegration = (System.getProperty('includeIntegration') == 'true') || (project.hasProperty('includeIntegration') && project.property('includeIntegration') == 'true')
+if (includeIntegration) {
+    // Run integration tests as part of the normal test lifecycle
+    test.finalizedBy integrationTest
+}
