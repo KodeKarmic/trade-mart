@@ -7,6 +7,7 @@ import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
 import com.trademart.tradestore.service.TradeService;
 import com.trademart.tradestore.service.TradeSequencer;
+import com.trademart.tradestore.service.TradeVersionValidator;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -21,15 +22,28 @@ public class TradeServiceImpl implements TradeService {
   private final TradeRepository tradeRepository;
   private final TradeHistoryRepository tradeHistoryRepository;
   private final TradeSequencer tradeSequencer;
+  private final com.trademart.tradestore.service.TradeVersionValidator versionValidator;
+
+  public TradeServiceImpl(
+      TradeRepository tradeRepository,
+      TradeHistoryRepository tradeHistoryRepository,
+      TradeSequencer tradeSequencer) {
+    // keep existing constructor for tests/backwards compatibility by
+    // delegating to the full constructor with a simple validator implementation.
+    this(tradeRepository, tradeHistoryRepository, tradeSequencer,
+        new com.trademart.tradestore.service.impl.SimpleTradeVersionValidator());
+  }
 
   @Autowired
   public TradeServiceImpl(
       TradeRepository tradeRepository,
       TradeHistoryRepository tradeHistoryRepository,
-      TradeSequencer tradeSequencer) {
+      TradeSequencer tradeSequencer,
+      TradeVersionValidator versionValidator) {
     this.tradeRepository = tradeRepository;
     this.tradeHistoryRepository = tradeHistoryRepository;
     this.tradeSequencer = tradeSequencer;
+    this.versionValidator = versionValidator;
   }
 
   @Override
@@ -40,10 +54,10 @@ public class TradeServiceImpl implements TradeService {
     TradeEntity before = null;
     if (existingOpt.isPresent()) {
       before = existingOpt.get();
-      if (dto.getVersion() != null && dto.getVersion() < before.getVersion()) {
-        throw new TradeRejectedException("incoming version is lower than existing");
-      }
     }
+
+    // delegate version validation to the validator component
+    versionValidator.validate(dto, before);
 
     // Maturity date validation: reject trades that are already expired
     if (dto.getMaturityDate() != null && dto.getMaturityDate().isBefore(LocalDate.now())) {
