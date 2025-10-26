@@ -30,7 +30,7 @@ public class ExceptionConfig {
     log.error("Unhandled exception caught:", ex);
 
     Map<String, Object> body = new LinkedHashMap<>();
-  String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
+    String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
     body.put("timestamp", timestamp);
     body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
     body.put("path", request == null ? null : request.getRequestURI());
@@ -54,7 +54,7 @@ public class ExceptionConfig {
     log.debug("Trade validation failed: {}", ex.getMessage());
 
     Map<String, Object> body = new LinkedHashMap<>();
-  String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
+    String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
     body.put("timestamp", timestamp);
     body.put("status", HttpStatus.BAD_REQUEST.value());
     body.put("path", request.getRequestURI());
@@ -89,7 +89,7 @@ public class ExceptionConfig {
     // Build response map allowing nulls for optional fields (traceId)
     Map<String, Object> body = new LinkedHashMap<>();
     // truncate to milliseconds so we always have exactly 3 fractional digits
-  String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
+    String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
     body.put("timestamp", timestamp);
     body.put("status", HttpStatus.BAD_REQUEST.value());
     body.put("path", request.getRequestURI());
@@ -122,7 +122,7 @@ public class ExceptionConfig {
     log.debug("Trade rejected: {}", ex.getMessage());
 
     Map<String, Object> body = new LinkedHashMap<>();
-  String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
+    String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
     body.put("timestamp", timestamp);
     body.put("status", HttpStatus.BAD_REQUEST.value());
     body.put("path", request.getRequestURI());

@@ -8,6 +8,7 @@ import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
 import com.trademart.tradestore.service.TradeService;
 import com.trademart.tradestore.service.TradeSequencer;
 import com.trademart.tradestore.service.TradeVersionValidator;
+import com.trademart.tradestore.service.TradeMaturityValidator;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.HashMap;
@@ -23,6 +24,7 @@ public class TradeServiceImpl implements TradeService {
   private final TradeHistoryRepository tradeHistoryRepository;
   private final TradeSequencer tradeSequencer;
   private final com.trademart.tradestore.service.TradeVersionValidator versionValidator;
+  private final com.trademart.tradestore.service.TradeMaturityValidator maturityValidator;
 
   public TradeServiceImpl(
       TradeRepository tradeRepository,
@@ -31,7 +33,9 @@ public class TradeServiceImpl implements TradeService {
     // keep existing constructor for tests/backwards compatibility by
     // delegating to the full constructor with a simple validator implementation.
     this(tradeRepository, tradeHistoryRepository, tradeSequencer,
-        new com.trademart.tradestore.service.impl.SimpleTradeVersionValidator());
+        new com.trademart.tradestore.service.impl.SimpleTradeVersionValidator(),
+        new com.trademart.tradestore.service.impl.SimpleTradeMaturityValidator(
+            new com.trademart.tradestore.service.ClockService(java.time.Clock.systemDefaultZone())));
   }
 
   @Autowired
@@ -39,11 +43,13 @@ public class TradeServiceImpl implements TradeService {
       TradeRepository tradeRepository,
       TradeHistoryRepository tradeHistoryRepository,
       TradeSequencer tradeSequencer,
-      TradeVersionValidator versionValidator) {
+      TradeVersionValidator versionValidator,
+      TradeMaturityValidator maturityValidator) {
     this.tradeRepository = tradeRepository;
     this.tradeHistoryRepository = tradeHistoryRepository;
     this.tradeSequencer = tradeSequencer;
     this.versionValidator = versionValidator;
+    this.maturityValidator = maturityValidator;
   }
 
   @Override
@@ -59,10 +65,8 @@ public class TradeServiceImpl implements TradeService {
     // delegate version validation to the validator component
     versionValidator.validate(dto, before);
 
-    // Maturity date validation: reject trades that are already expired
-    if (dto.getMaturityDate() != null && dto.getMaturityDate().isBefore(LocalDate.now())) {
-      throw new TradeRejectedException("maturity date is in the past");
-    }
+    // delegate maturity validation to pluggable validator
+    maturityValidator.validate(dto);
 
     TradeEntity entity = existingOpt.orElseGet(() -> new TradeEntity());
     // map fields

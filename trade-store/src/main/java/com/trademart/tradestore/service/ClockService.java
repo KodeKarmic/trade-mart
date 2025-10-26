@@ -16,4 +16,8 @@ public class ClockService {
   public Instant nowUtc() {
     return Instant.now(clock);
   }
+
+  public Clock getClock() {
+    return clock;
+  }
 }
