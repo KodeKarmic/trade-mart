@@ -22,7 +22,7 @@ jobs:
           java-version: '17'
 
       - name: OWASP Dependency-Check
-        uses: dependency-check/dependency-check-action@v2
+        uses: jeremylong/owasp-dependency-check-action@v2
         with:
           project: trade-mart
           format: 'SARIF'
