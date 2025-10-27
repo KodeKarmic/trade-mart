@@ -1,0 +1,7 @@
+{
+  "tradeId": "T1",
+  "version": 1,
+  "price": 100.0,
+  "quantity": 10,
+  "maturityDate": "2025-12-31"
+}

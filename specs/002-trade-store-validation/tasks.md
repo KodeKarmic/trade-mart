@@ -79,31 +79,14 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [x] T023 [P] Documentation updates in docs/
-- [x] T024 Code cleanup and refactoring
-- [ ] T025 Performance optimization in src/main/java/com/trademart/app/service/
-- [ ] T026 [P] Additional unit tests in src/test/java/com/trademart/app/unit/
-- [ ] T027 Security hardening in src/main/java/com/trademart/app/config/SecurityConfig.java
-- [ ] T028 Run quickstart.md validation
- - [ ] T027 Security hardening in src/main/java/com/trademart/app/config/SecurityConfig.java
- - [x] T028 Run quickstart.md validation (quickstart.md added and `:trade-store:test` validated)
-
 ## Phase 6 status (progress update)
 
-- [x] T023 [P] Documentation updates in docs/ (added feature README and quickstart)
-- [x] T024 Code cleanup and refactoring
-- [ ] T025 Performance optimization in service
-- [x] T026 [P] Additional unit tests (added a small edge-case unit test verifying maturity==today logic)
-- [ ] T027 Security hardening in SecurityConfig.java
-- [ ] T028 Run quickstart.md validation
- -## Phase 6 status (progress update)
- 
  - [x] T023 [P] Documentation updates in docs/ (added feature README and quickstart)
  - [x] T024 Code cleanup and refactoring
  - [x] T025 Performance optimization in src/main/java/com/trademart/app/service/ (JMH benchmark added and run; results recorded in README)
  - [x] T026 [P] Additional unit tests in src/test/java/com/trademart/app/unit/ (added a small edge-case unit test verifying maturity==today logic)
  - [ ] T027 Security hardening in src/main/java/com/trademart/app/config/SecurityConfig.java
- - [ ] T028 Run quickstart.md validation
+ - [x] T028 Run quickstart.md validation (docker-compose added, end-to-end POST /trades validated with HTTP 201)
 
 -## Phase 6.1: Quality & Security (added tasks)
 
