@@ -1,0 +1,10 @@
+spring:
+  data:
+    mongodb:
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://mongo:27017/tradedb}
+
+# Trade repair specific defaults
+trade:
+  store:
+    resubmit:
+      url: ${TRADE_STORE_RESUBMIT_URL:http://trade-store:8080/trades}
