@@ -39,7 +39,7 @@ spec:
       # Query should return a single numeric value. We sum the pending gauge across pods.
       query: "sum(trade_processor_pending_messages)"
       threshold: '5'
-``` 
+```
 
 Make sure Prometheus is scraping the application `/actuator/prometheus` endpoint (ServiceMonitor / PodMonitor). The `serverAddress` must point to your Prometheus server.
 
@@ -94,7 +94,7 @@ spec:
       topic: trades
       consumerGroup: trade-store-group
       lagThreshold: '100'   # scale when lag > 100
-``` 
+```
 
 Security and networking notes
 - Ensure Prometheus can reach the application metrics endpoint. If using RBAC/service discovery (ServiceMonitor), configure accordingly.

@@ -25,8 +25,7 @@ class TradePersistenceIntegrationTest {
   @Container
   static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine");
 
-  @Container
-  static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8");
+  @Container static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8");
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -41,12 +40,9 @@ class TradePersistenceIntegrationTest {
     registry.add("spring.flyway.enabled", () -> "true");
   }
 
-  @Autowired
-  TradeService tradeService;
-  @Autowired
-  TradeRepository tradeRepository;
-  @Autowired
-  TradeHistoryRepository tradeHistoryRepository;
+  @Autowired TradeService tradeService;
+  @Autowired TradeRepository tradeRepository;
+  @Autowired TradeHistoryRepository tradeHistoryRepository;
 
   @Test
   void createTradePersistsEntityAndHistory() {

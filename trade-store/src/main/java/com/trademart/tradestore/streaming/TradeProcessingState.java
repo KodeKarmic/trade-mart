@@ -4,10 +4,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.springframework.stereotype.Component;
 
 /**
- * Simple in-memory counter of in-flight/pending messages being processed by
- * this instance.
- * A Micrometer Gauge can be bound to this value so an autoscaler can make
- * decisions.
+ * Simple in-memory counter of in-flight/pending messages being processed by this instance. A
+ * Micrometer Gauge can be bound to this value so an autoscaler can make decisions.
  */
 @Component
 public class TradeProcessingState {

@@ -18,10 +18,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Profile;
 
 /**
- * Lightweight batch worker application.
- * Run with `--spring.profiles.active=batch` (or the Dockerfile sets this) to
- * start the worker.
- * It consumes up to `batch.maxMessages` messages and then exits.
+ * Lightweight batch worker application. Run with `--spring.profiles.active=batch` (or the
+ * Dockerfile sets this) to start the worker. It consumes up to `batch.maxMessages` messages and
+ * then exits.
  */
 @SpringBootApplication
 @Profile("batch")
@@ -61,8 +60,8 @@ public class BatchWorkerApplication implements CommandLineRunner {
       bootstrapServers = System.getenv("KAFKA_BOOTSTRAP_SERVERS");
     }
     if (bootstrapServers == null || bootstrapServers.isBlank()) {
-      System.err
-          .println("No Kafka bootstrap servers configured. Set batch.bootstrapServers or KAFKA_BOOTSTRAP_SERVERS.");
+      System.err.println(
+          "No Kafka bootstrap servers configured. Set batch.bootstrapServers or KAFKA_BOOTSTRAP_SERVERS.");
       System.exit(2);
     }
 
@@ -84,8 +83,7 @@ public class BatchWorkerApplication implements CommandLineRunner {
             TradeDto dto = mapper.readValue(record.value(), TradeDto.class);
             tradeService.createOrUpdateTrade(dto);
             consumed++;
-            if (consumed >= maxMessages)
-              break;
+            if (consumed >= maxMessages) break;
           } catch (Exception ex) {
             System.err.println("Worker failed to process message: " + ex.getMessage());
             // continue processing other messages

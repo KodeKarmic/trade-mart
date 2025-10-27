@@ -44,37 +44,39 @@ public class TradeServiceImplTest {
     when(tradeSequencer.nextSequence()).thenReturn(42L);
     // emulate original version validation logic
     org.mockito.Mockito.doAnswer(
-        inv -> {
-          com.trademart.tradestore.model.TradeDto incoming = inv.getArgument(0);
-          com.trademart.tradestore.model.TradeEntity existing = inv.getArgument(1);
-          if (existing != null
-              && incoming.getVersion() != null
-              && incoming.getVersion() < existing.getVersion()) {
-            throw new com.trademart.tradestore.exception.TradeRejectedException(
-                "incoming version is lower than existing");
-          }
-          return null;
-        })
+            inv -> {
+              com.trademart.tradestore.model.TradeDto incoming = inv.getArgument(0);
+              com.trademart.tradestore.model.TradeEntity existing = inv.getArgument(1);
+              if (existing != null
+                  && incoming.getVersion() != null
+                  && incoming.getVersion() < existing.getVersion()) {
+                throw new com.trademart.tradestore.exception.TradeRejectedException(
+                    "incoming version is lower than existing");
+              }
+              return null;
+            })
         .when(versionValidator)
         .validate(any(), any());
     // emulate original maturity validation (throws domain TradeValidationException
     // now)
     org.mockito.Mockito.doAnswer(
-        inv -> {
-          java.time.LocalDate md = inv.getArgument(0);
-          if (md != null && md.isBefore(java.time.LocalDate.now())) {
-            throw new com.trademart.tradestore.exception.TradeValidationException("maturity date is in the past");
-          }
-          return null;
-        })
+            inv -> {
+              java.time.LocalDate md = inv.getArgument(0);
+              if (md != null && md.isBefore(java.time.LocalDate.now())) {
+                throw new com.trademart.tradestore.exception.TradeValidationException(
+                    "maturity date is in the past");
+              }
+              return null;
+            })
         .when(maturityValidator)
         .validate(any());
-    service = new TradeServiceImpl(
-        tradeRepository,
-        tradeHistoryRepository,
-        tradeSequencer,
-        versionValidator,
-        maturityValidator);
+    service =
+        new TradeServiceImpl(
+            tradeRepository,
+            tradeHistoryRepository,
+            tradeSequencer,
+            versionValidator,
+            maturityValidator);
   }
 
   @Test
@@ -324,8 +326,7 @@ public class TradeServiceImplTest {
               }));
     }
 
-    for (Future<?> f : futures)
-      f.get();
+    for (Future<?> f : futures) f.get();
     ex.shutdownNow();
 
     assertThat(saveCount.get()).isEqualTo(threads);

@@ -18,8 +18,8 @@ public class TradeQueryController {
   }
 
   /**
-   * Return the current max version for a given tradeId.
-   * Returns 204 No Content when no versions exist yet for that tradeId.
+   * Return the current max version for a given tradeId. Returns 204 No Content when no versions
+   * exist yet for that tradeId.
    */
   @GetMapping("/{tradeId}/max-version")
   public ResponseEntity<Integer> maxVersion(@PathVariable String tradeId) {
