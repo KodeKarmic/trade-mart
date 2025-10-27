@@ -16,6 +16,7 @@ import org.slf4j.MDC;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,10 +26,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.context.annotation.Import;
 import com.trademart.tradestore.config.ExceptionConfig;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import com.trademart.tradestore.exception.TradeRejectedException;
 
 @WebMvcTest(controllers = com.trademart.tradestore.streaming.TradeIngestionController.class)
-@Import(ExceptionConfig.class)
+@AutoConfigureMockMvc(addFilters = false)
+@Import({ ExceptionConfig.class, TradeIngestionControllerTest.TestConfig.class })
 public class TradeIngestionControllerTest {
 
   @Autowired
@@ -39,6 +42,9 @@ public class TradeIngestionControllerTest {
 
   @MockBean
   private TradeService tradeService;
+
+  @Autowired
+  private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
   @Test
   public void whenInvalidPayload_thenReturns400() throws Exception {
@@ -148,5 +154,68 @@ public class TradeIngestionControllerTest {
     // should be a valid UUID string (will throw IllegalArgumentException if
     // invalid)
     UUID.fromString(traceId);
+  }
+
+  @Test
+  public void whenValidPayload_metricsAreRecorded() throws Exception {
+    TradeDto dto = new TradeDto();
+    dto.setTradeId("T-MET-1");
+    dto.setPrice(new BigDecimal("10.5"));
+    dto.setMaturityDate(LocalDate.of(2026, 12, 31));
+
+    TradeEntity saved = new TradeEntity();
+    saved.setTradeId("T-MET-1");
+
+    given(tradeService.createOrUpdateTrade(any(TradeDto.class))).willReturn(saved);
+
+    // ensure counters start at 0
+    var reqCounter = meterRegistry.counter("trade_ingest_requests_total");
+    var errCounter = meterRegistry.counter("trade_ingest_errors_total");
+    var timer = meterRegistry.find("trade_ingest_latency_seconds").timer();
+
+    double beforeReq = reqCounter != null ? reqCounter.count() : 0.0;
+    double beforeErr = errCounter != null ? errCounter.count() : 0.0;
+    long beforeTimerCount = timer != null ? timer.count() : 0L;
+
+    String json = mapper.writeValueAsString(dto);
+
+    mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(json))
+        .andExpect(status().isCreated());
+
+    // counters/timer should have incremented
+    assertTrue(meterRegistry.counter("trade_ingest_requests_total").count() >= beforeReq + 1.0);
+    assertEquals(beforeErr, meterRegistry.counter("trade_ingest_errors_total").count(), 0.0001);
+    var afterTimer = meterRegistry.find("trade_ingest_latency_seconds").timer();
+    assertNotNull(afterTimer);
+    assertTrue(afterTimer.count() >= beforeTimerCount + 1);
+  }
+
+  @Test
+  public void whenServiceThrows_errorCounterIncrements() throws Exception {
+    TradeDto dto = new TradeDto();
+    dto.setTradeId("T-MET-ERR");
+    dto.setPrice(new BigDecimal("1.00"));
+    dto.setMaturityDate(LocalDate.now().plusDays(1));
+
+    given(tradeService.createOrUpdateTrade(any(TradeDto.class)))
+        .willThrow(new RuntimeException("boom"));
+
+    var errCounter = meterRegistry.counter("trade_ingest_errors_total");
+    double beforeErr = errCounter != null ? errCounter.count() : 0.0;
+
+    String json = mapper.writeValueAsString(dto);
+
+    mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(json))
+        .andExpect(status().is5xxServerError());
+
+    assertTrue(meterRegistry.counter("trade_ingest_errors_total").count() >= beforeErr + 1.0);
+  }
+
+  @org.springframework.boot.test.context.TestConfiguration
+  static class TestConfig {
+    @org.springframework.context.annotation.Bean
+    public io.micrometer.core.instrument.MeterRegistry meterRegistry() {
+      return new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+    }
   }
 }
