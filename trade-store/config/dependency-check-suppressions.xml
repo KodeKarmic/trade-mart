@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <!-- 
+    Add CVE suppressions here when you've manually verified a vulnerability is a false positive
+    or doesn't apply to your usage.
+    
+    Example:
+    <suppress>
+       <notes><![CDATA[
+       Suppression for CVE-2023-XXXXX - false positive for our usage
+       ]]></notes>
+       <cve>CVE-2023-XXXXX</cve>
+    </suppress>
+    -->
+</suppressions>

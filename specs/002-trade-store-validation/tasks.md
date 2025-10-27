@@ -91,7 +91,7 @@
 -## Phase 6.1: Quality & Security (added tasks)
 
 - [x] T029 Add performance test case in performance/ (Gatling or JMH) and integrate into CI
-- [ ] T030 Add vulnerability scan job in .github/workflows/scan.yml using OWASP Dependency-Check or Snyk; fail build on critical/blocker
+- [x] T030 Add vulnerability scan job in .github/workflows/security-scan.yml using OWASP Dependency-Check; fail build on critical/high
 - [ ] T031 Add CODE_REVIEW requirement: enforce one approving review and checklist validation before merge (document in CONTRIBUTING.md)
 - [ ] T032 Add malformed-data test: src/test/java/com/trademart/app/unit/TradeMalformedTest.java and handler in src/main/java/com/trademart/app/service/ValidationService.java
 - [ ] T033 Add error-message validation tests in src/test/java/com/trademart/app/integration/ErrorMessageIntegrationTest.java

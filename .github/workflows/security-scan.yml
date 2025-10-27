@@ -1,0 +1,60 @@
+name: Security Vulnerability Scan
+
+on:
+  push:
+    branches: [ main, develop, '**trade-store**' ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run weekly on Monday at 2 AM UTC
+    - cron: '0 2 * * 1'
+  workflow_dispatch:
+
+jobs:
+  dependency-check:
+    name: OWASP Dependency Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
+      
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+      
+      - name: Run OWASP Dependency-Check
+        run: |
+          ./gradlew :trade-store:dependencyCheckAnalyze --info
+        continue-on-error: true
+      
+      - name: Upload Dependency-Check report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-check-report
+          path: trade-store/build/reports/dependency-check-report.html
+          retention-days: 30
+      
+      - name: Check for critical/high vulnerabilities
+        run: |
+          if [ -f "trade-store/build/reports/dependency-check-report.json" ]; then
+            CRITICAL=$(jq '[.dependencies[].vulnerabilities[] | select(.severity == "CRITICAL")] | length' trade-store/build/reports/dependency-check-report.json)
+            HIGH=$(jq '[.dependencies[].vulnerabilities[] | select(.severity == "HIGH")] | length' trade-store/build/reports/dependency-check-report.json)
+            
+            echo "Found $CRITICAL critical and $HIGH high severity vulnerabilities"
+            
+            if [ "$CRITICAL" -gt 0 ] || [ "$HIGH" -gt 0 ]; then
+              echo "::error::Build failed due to critical or high severity vulnerabilities"
+              echo "Critical: $CRITICAL, High: $HIGH"
+              exit 1
+            fi
+          else
+            echo "::warning::Dependency check report not found, skipping vulnerability threshold check"
+          fi

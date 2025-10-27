@@ -6,6 +6,8 @@ plugins {
     id 'com.diffplug.spotless' version '6.21.0'
     // JMH microbenchmarking plugin
     id 'me.champeau.jmh' version '0.7.1'
+    // OWASP Dependency-Check for vulnerability scanning
+    id 'org.owasp.dependencycheck' version '9.0.9'
 }
 
 // Allow duplicate resource entries for integrationTest processing (some test resource files intentionally
@@ -159,4 +161,32 @@ if (includeIntegration) {
 // Prefer explicit configuration of the jmhJar task to enable Zip64 support
 tasks.named('jmhJar', org.gradle.api.tasks.bundling.Jar).configure {
     zip64 = true
+}
+
+// OWASP Dependency-Check configuration
+dependencyCheck {
+    // Generate both HTML and JSON reports
+    formats = ['HTML', 'JSON']
+    
+    // Fail build on CVSS score >= 7 (High and Critical)
+    failBuildOnCVSS = 7
+    
+    // Suppress false positives (add CVE IDs here as needed)
+    suppressionFile = file('config/dependency-check-suppressions.xml').exists() ? 
+        file('config/dependency-check-suppressions.xml').absolutePath : null
+    
+    // Speed up scan by using cached data
+    autoUpdate = true
+    
+    // Output directory
+    outputDirectory = file("${buildDir}/reports")
+    
+    // NVD API Key (required for NVD CVE data updates)
+    // Set via env var NVD_API_KEY or gradle property: ./gradlew -Pnvd.api.key=YOUR_KEY
+    // Get free API key at: https://nvd.nist.gov/developers/request-an-api-key
+    if (project.hasProperty('nvd.api.key')) {
+        nvdApiKey = project.property('nvd.api.key')
+    } else if (System.getenv('NVD_API_KEY')) {
+        nvdApiKey = System.getenv('NVD_API_KEY')
+    }
 }
