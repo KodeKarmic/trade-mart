@@ -16,6 +16,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+      - name: (optional) Normalize line endings
+        run: sed -i 's/\r$//' gradlew
       - name: Run trade-store unit tests
         run: |
           ./gradlew :trade-store:test --no-daemon --stacktrace
