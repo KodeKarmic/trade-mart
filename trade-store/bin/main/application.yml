@@ -1,0 +1,14 @@
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+
+# Restrict where Spring serves static resources so the ResourceHttpRequestHandler
+# does not greedily match top-level paths like /actuator/** during tests.
+spring:
+  mvc:
+    static-path-pattern: /static/**
