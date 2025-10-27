@@ -17,6 +17,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import com.trademart.tradestore.testconfig.TestJwtDecoderConfig;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.HttpEntity;
@@ -32,6 +34,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@Import(TestJwtDecoderConfig.class)
 @Testcontainers
 @Tag("integration")
 public class TradeIngestionIT {
@@ -128,6 +131,7 @@ public class TradeIngestionIT {
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setBearerAuth("valid-token");
     HttpEntity<String> req = new HttpEntity<>(body, headers);
 
     ResponseEntity<String> resp = restTemplate.postForEntity(url, req, String.class);
@@ -148,6 +152,7 @@ public class TradeIngestionIT {
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setBearerAuth("valid-token");
     HttpEntity<String> req = new HttpEntity<>(body, headers);
 
     ResponseEntity<String> resp = restTemplate.postForEntity(url, req, String.class);
@@ -173,6 +178,7 @@ public class TradeIngestionIT {
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setBearerAuth("valid-token");
     HttpEntity<String> req = new HttpEntity<>(body, headers);
 
     ResponseEntity<String> resp = restTemplate.postForEntity(url, req, String.class);

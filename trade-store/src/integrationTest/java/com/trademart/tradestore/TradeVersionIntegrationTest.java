@@ -24,6 +24,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@org.springframework.context.annotation.Import(com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class)
 @Testcontainers
 @Tag("integration")
 public class TradeVersionIntegrationTest {
@@ -70,6 +71,7 @@ public class TradeVersionIntegrationTest {
     String t1 = "{\"tradeId\": \"DB-T1\", \"version\": 5, \"maturityDate\": \"2030-01-01\", \"price\": 100.00}";
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setBearerAuth("valid-token");
     ResponseEntity<String> r1 = restTemplate.postForEntity(baseUrl, new HttpEntity<>(t1, headers), String.class);
     System.out.println("r1 status=" + r1.getStatusCode());
     assertThat(r1.getStatusCode().is2xxSuccessful()).isTrue();

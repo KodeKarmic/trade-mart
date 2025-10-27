@@ -27,6 +27,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@org.springframework.context.annotation.Import(com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class)
 @Testcontainers
 @Tag("integration")
 public class TradeSequencingIT {
@@ -116,6 +117,7 @@ public class TradeSequencingIT {
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
+    headers.setBearerAuth("valid-token");
 
     restTemplate.postForEntity(url, new HttpEntity<>(tb, headers), String.class);
     restTemplate.postForEntity(url, new HttpEntity<>(ta, headers), String.class);

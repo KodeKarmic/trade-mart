@@ -29,25 +29,24 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@org.springframework.context.annotation.Import(com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class)
 @Testcontainers
 @Tag("integration")
 public class TradeConcurrencyIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:15-alpine")
-          .withDatabaseName("test")
-          .withUsername("test")
-          .withPassword("test");
+  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+      .withDatabaseName("test")
+      .withUsername("test")
+      .withPassword("test");
 
   @Container
-  static MongoDBContainer mongo =
-      new MongoDBContainer("mongo:6.0.8")
-          // use a log-based wait strategy and extend the startup timeout to be more
-          // tolerant of transient socket/read issues during Mongo replica set
-          // initialization
-          .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
-          .withStartupTimeout(Duration.ofSeconds(120));
+  static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8")
+      // use a log-based wait strategy and extend the startup timeout to be more
+      // tolerant of transient socket/read issues during Mongo replica set
+      // initialization
+      .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
+      .withStartupTimeout(Duration.ofSeconds(120));
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -59,13 +58,17 @@ public class TradeConcurrencyIT {
     registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
   }
 
-  @LocalServerPort int port;
+  @LocalServerPort
+  int port;
 
-  @Autowired TestRestTemplate restTemplate;
+  @Autowired
+  TestRestTemplate restTemplate;
 
-  @Autowired TradeRepository tradeRepository;
+  @Autowired
+  TradeRepository tradeRepository;
 
-  @Autowired TradeHistoryRepository tradeHistoryRepository;
+  @Autowired
+  TradeHistoryRepository tradeHistoryRepository;
 
   @BeforeAll
   static void beforeAll() throws Exception {
@@ -79,8 +82,7 @@ public class TradeConcurrencyIT {
     for (int i = 0; i < maxAttempts; i++) {
       try {
         try {
-          var res =
-              mongo.execInContainer("mongosh", "--eval", "db.adminCommand({ping:1})", "--quiet");
+          var res = mongo.execInContainer("mongosh", "--eval", "db.adminCommand({ping:1})", "--quiet");
           if (res != null && res.getExitCode() == 0) {
             String out = res.getStdout();
             if (out != null && out.toLowerCase().contains("ok")) {
@@ -125,24 +127,24 @@ public class TradeConcurrencyIT {
               () -> {
                 ready.countDown();
                 start.await();
-                String body =
-                    "{\n"
-                        + "  \"tradeId\": \""
-                        + tradeId
-                        + "\",\n"
-                        + "  \"version\": "
-                        + v
-                        + ",\n"
-                        + "  \"maturityDate\": \""
-                        + LocalDate.now().plusDays(5 + v)
-                        + "\",\n"
-                        + "  \"price\": "
-                        + (100 + v)
-                        + "\n"
-                        + "}";
+                String body = "{\n"
+                    + "  \"tradeId\": \""
+                    + tradeId
+                    + "\",\n"
+                    + "  \"version\": "
+                    + v
+                    + ",\n"
+                    + "  \"maturityDate\": \""
+                    + LocalDate.now().plusDays(5 + v)
+                    + "\",\n"
+                    + "  \"price\": "
+                    + (100 + v)
+                    + "\n"
+                    + "}";
 
                 HttpHeaders headers = new HttpHeaders();
                 headers.setContentType(MediaType.APPLICATION_JSON);
+                headers.setBearerAuth("valid-token");
                 HttpEntity<String> req = new HttpEntity<>(body, headers);
 
                 return restTemplate.postForEntity(url, req, String.class);
@@ -173,8 +175,7 @@ public class TradeConcurrencyIT {
     List<TradeHistory> history = tradeHistoryRepository.findByTradeIdOrderByVersionDesc(tradeId);
     assertThat(history).isNotEmpty();
     // there should be at least one entry with version == threads
-    boolean foundMax =
-        history.stream().anyMatch(h -> Integer.valueOf(threads).equals(h.getVersion()));
+    boolean foundMax = history.stream().anyMatch(h -> Integer.valueOf(threads).equals(h.getVersion()));
     assertThat(foundMax).isTrue();
   }
 }

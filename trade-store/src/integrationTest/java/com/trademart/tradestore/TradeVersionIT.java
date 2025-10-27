@@ -37,6 +37,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Testcontainers
 @Tag("integration")
+@org.springframework.context.annotation.Import(com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class)
 public class TradeVersionIT {
 
   @Container
@@ -113,6 +114,7 @@ public class TradeVersionIT {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
+    headers.setBearerAuth("valid-token");
 
     ResponseEntity<String> r1 = restTemplate.postForEntity(url, new HttpEntity<>(initial, headers), String.class);
     assertThat(r1.getStatusCode()).isEqualTo(HttpStatus.CREATED);
@@ -192,6 +194,7 @@ public class TradeVersionIT {
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     headers.setAccept(java.util.List.of(MediaType.APPLICATION_JSON));
+    headers.setBearerAuth("valid-token");
 
     ResponseEntity<String> resp = restTemplate.postForEntity(url, new HttpEntity<>(payload, headers), String.class);
     assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
