@@ -2,9 +2,9 @@ name: repo-scan
 
 on:
   push:
-    branches: [ main, master, '002-trade-store-validation' ]
+    branches: [ main, master, init ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, init ]
 
 jobs:
   scan:
@@ -20,28 +20,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
-      - name: Install markdownlint-cli
-        run: |
-          npm ci --no-audit --no-fund || npm install -g markdownlint-cli@0.33.0
-
-      - name: Run markdownlint
-        run: |
-          echo "Running markdownlint"
-          npx markdownlint "**/*.md" --config .markdownlint.json || true
 
       - name: OWASP Dependency-Check
         uses: dependency-check/dependency-check-action@v2
