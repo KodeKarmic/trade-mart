@@ -62,6 +62,9 @@ public class TradeSequencingIT {
   @Autowired
   TradeHistoryRepository tradeHistoryRepository;
 
+  @Autowired
+  com.trademart.tradestore.repository.TradeRepository tradeRepository;
+
   @BeforeAll
   static void beforeAll() throws Exception {
     // ensure mongo is responsive before tests proceed (will throw if not)
@@ -140,5 +143,30 @@ public class TradeSequencingIT {
     assertThat(selected.get(0).getTradeId()).isEqualTo("SEQ-B");
     assertThat(selected.get(1).getTradeId()).isEqualTo("SEQ-A");
     assertThat(selected.get(2).getTradeId()).isEqualTo("SEQ-C");
+
+    // Also assert the JPA TradeEntity ingestSequence values reflect the same
+    // ordering
+    var entA = tradeRepository.findByTradeId("SEQ-A").orElseThrow();
+    var entB = tradeRepository.findByTradeId("SEQ-B").orElseThrow();
+    var entC = tradeRepository.findByTradeId("SEQ-C").orElseThrow();
+
+    Long seqEntB = entB.getIngestSequence();
+    Long seqEntA = entA.getIngestSequence();
+    Long seqEntC = entC.getIngestSequence();
+
+    assertThat(seqEntB).isNotNull();
+    assertThat(seqEntA).isNotNull();
+    assertThat(seqEntC).isNotNull();
+
+    // arrival order was B, A, C
+    assertThat(seqEntB).isLessThan(seqEntA);
+    assertThat(seqEntA).isLessThan(seqEntC);
+
+    // cross-check TradeHistory sequences match the Entity sequences for each
+    // tradeId
+    var byId = selected.stream().collect(Collectors.toMap(TradeHistory::getTradeId, TradeHistory::getSequence));
+    assertThat(byId.get("SEQ-A")).isEqualTo(entA.getIngestSequence());
+    assertThat(byId.get("SEQ-B")).isEqualTo(entB.getIngestSequence());
+    assertThat(byId.get("SEQ-C")).isEqualTo(entC.getIngestSequence());
   }
 }
