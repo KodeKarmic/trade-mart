@@ -84,3 +84,51 @@ To skip integration tests (useful when Docker isn't available), pass the `skipIn
 ```
 
 The integration tests are separated into the `integrationTest` source set and task. Unit tests still run with `test`.
+
+ClockService (deterministic time)
+---------------------------------
+
+The application uses a `ClockService` to provide a `Clock`/`Instant` time source so
+components can compute `LocalDate.now(clock)` and other time-sensitive values in a
+deterministic way in tests.
+
+Example unit-test pattern (Java):
+
+```java
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
+
+Clock fixed = Clock.fixed(Instant.parse("2025-10-27T00:00:00Z"), ZoneOffset.UTC);
+ClockService clockService = new ClockService(fixed);
+
+// pass the clockService into the class under test
+SimpleTradeMaturityValidator v = new SimpleTradeMaturityValidator(clockService);
+```
+
+JwtDecoder and testing secured endpoints
+---------------------------------------
+
+The ingestion endpoint (`POST /trades`) is protected by Spring Security (OAuth2
+resource server). Integration tests use a test-only `JwtDecoder` to avoid an external
+JWKS endpoint. That test decoder lives in `src/integrationTest/java/.../testconfig`
+and maps simple token strings to Jwt claims:
+
+- `"no-scope"` -> a Jwt with no `scope` claim (useful to assert 403 behavior).
+- `"expired"` -> the decoder throws `JwtException` to simulate a token failure.
+- any other token (for example `"valid-token"`) -> Jwt with `scope: "trade.ingest"`.
+
+Integration tests set the Authorization header, for example:
+
+```java
+HttpHeaders headers = new HttpHeaders();
+headers.setContentType(MediaType.APPLICATION_JSON);
+headers.setBearerAuth("valid-token");
+HttpEntity<String> req = new HttpEntity<>(jsonBody, headers);
+ResponseEntity<String> resp = restTemplate.postForEntity(url, req, String.class);
+```
+
+There is also a permissive, development-only `JwtDecoder` bean in `SecurityConfig` that
+is active only under the `dev` Spring profile; it is intended purely for local
+convenience and should not be used in CI/production.
+
