@@ -85,6 +85,8 @@
 - [ ] T026 [P] Additional unit tests in src/test/java/com/trademart/app/unit/
 - [ ] T027 Security hardening in src/main/java/com/trademart/app/config/SecurityConfig.java
 - [ ] T028 Run quickstart.md validation
+ - [ ] T027 Security hardening in src/main/java/com/trademart/app/config/SecurityConfig.java
+ - [x] T028 Run quickstart.md validation (quickstart.md added and `:trade-store:test` validated)
 
 ## Phase 6 status (progress update)
 
