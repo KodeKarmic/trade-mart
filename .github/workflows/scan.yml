@@ -21,12 +21,27 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: OWASP Dependency-Check
-        uses: jeremylong/owasp-dependency-check-action@v2
-        with:
-          project: trade-mart
-          format: 'SARIF'
-          scan: '.'
+      - name: Install prerequisites (jq/unzip)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq unzip
+
+      - name: OWASP Dependency-Check (CLI)
+        run: |
+          echo "Fetching latest Dependency-Check release info..."
+          ASSET_URL=$(curl -s https://api.github.com/repos/jeremylong/DependencyCheck/releases/latest \
+            | jq -r '.assets[] | select(.name | test("dependency-check-.*-release.zip")) | .browser_download_url' \
+            | head -n1)
+          if [ -z "${ASSET_URL}" ]; then
+            echo "Unable to find a Dependency-Check release asset via GitHub API" >&2
+            exit 1
+          fi
+          echo "Downloading $ASSET_URL"
+          curl -L -o dependency-check.zip "$ASSET_URL"
+          unzip -q dependency-check.zip -d dependency-check
+          chmod +x dependency-check/dependency-check/bin/dependency-check.sh
+          echo "Running dependency-check (this may take a while)..."
+          ./dependency-check/dependency-check/bin/dependency-check.sh --project "trade-mart" --scan . --format SARIF --out .
 
       - name: Upload dependency-check SARIF
         uses: github/codeql-action/upload-sarif@v2
