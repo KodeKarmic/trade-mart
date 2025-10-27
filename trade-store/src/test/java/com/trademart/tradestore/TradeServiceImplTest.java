@@ -30,6 +30,8 @@ public class TradeServiceImplTest {
   private TradeRepository tradeRepository;
   private TradeHistoryRepository tradeHistoryRepository;
   private com.trademart.tradestore.service.TradeSequencer tradeSequencer;
+  private com.trademart.tradestore.service.TradeVersionValidator versionValidator;
+  private com.trademart.tradestore.service.TradeMaturityValidator maturityValidator;
   private TradeServiceImpl service;
 
   @BeforeEach
@@ -37,8 +39,42 @@ public class TradeServiceImplTest {
     tradeRepository = mock(TradeRepository.class);
     tradeHistoryRepository = mock(TradeHistoryRepository.class);
     tradeSequencer = mock(com.trademart.tradestore.service.TradeSequencer.class);
+    versionValidator = mock(com.trademart.tradestore.service.TradeVersionValidator.class);
+    maturityValidator = mock(com.trademart.tradestore.service.TradeMaturityValidator.class);
     when(tradeSequencer.nextSequence()).thenReturn(42L);
-    service = new TradeServiceImpl(tradeRepository, tradeHistoryRepository, tradeSequencer);
+    // emulate original version validation logic
+    org.mockito.Mockito.doAnswer(
+        inv -> {
+          com.trademart.tradestore.model.TradeDto incoming = inv.getArgument(0);
+          com.trademart.tradestore.model.TradeEntity existing = inv.getArgument(1);
+          if (existing != null
+              && incoming.getVersion() != null
+              && incoming.getVersion() < existing.getVersion()) {
+            throw new com.trademart.tradestore.exception.TradeRejectedException(
+                "incoming version is lower than existing");
+          }
+          return null;
+        })
+        .when(versionValidator)
+        .validate(any(), any());
+    // emulate original maturity validation (throws domain TradeValidationException
+    // now)
+    org.mockito.Mockito.doAnswer(
+        inv -> {
+          java.time.LocalDate md = inv.getArgument(0);
+          if (md != null && md.isBefore(java.time.LocalDate.now())) {
+            throw new com.trademart.tradestore.exception.TradeValidationException("maturity date is in the past");
+          }
+          return null;
+        })
+        .when(maturityValidator)
+        .validate(any());
+    service = new TradeServiceImpl(
+        tradeRepository,
+        tradeHistoryRepository,
+        tradeSequencer,
+        versionValidator,
+        maturityValidator);
   }
 
   @Test
@@ -156,69 +192,6 @@ public class TradeServiceImplTest {
     // when incoming version is null, service should still write history with saved
     // version
     assertThat(hist.getAfter()).containsEntry("version", saved.getVersion());
-  }
-
-  @Test
-  void whenMaturityDateBeforeToday_thenReject() {
-    TradeDto dto = new TradeDto();
-    dto.setTradeId("OLD");
-    dto.setVersion(1);
-    dto.setPrice(new BigDecimal("1.23"));
-    dto.setMaturityDate(LocalDate.now().minusDays(1));
-
-    assertThatThrownBy(() -> service.createOrUpdateTrade(dto))
-        .isInstanceOf(TradeRejectedException.class);
-  }
-
-  @Test
-  void whenMaturityDateIsToday_thenAccept() {
-    when(tradeRepository.findByTradeId("TODAY")).thenReturn(Optional.empty());
-
-    TradeEntity saved = new TradeEntity();
-    saved.setTradeId("TODAY");
-    saved.setVersion(1);
-    saved.setMaturityDate(LocalDate.now());
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(saved);
-
-    TradeDto dto = new TradeDto();
-    dto.setTradeId("TODAY");
-    dto.setVersion(1);
-    dto.setPrice(new BigDecimal("3.21"));
-    dto.setMaturityDate(LocalDate.now());
-
-    TradeEntity result = service.createOrUpdateTrade(dto);
-
-    assertThat(result).isNotNull();
-    assertThat(result.getMaturityDate()).isEqualTo(LocalDate.now());
-  }
-
-  @Test
-  void whenMaturityDateIsNull_thenAcceptAndHistoryContainsNull() {
-    when(tradeRepository.findByTradeId("NULLMD")).thenReturn(Optional.empty());
-
-    TradeEntity saved = new TradeEntity();
-    saved.setTradeId("NULLMD");
-    saved.setVersion(1);
-    saved.setMaturityDate(null);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
-        .thenReturn(saved);
-
-    TradeDto dto = new TradeDto();
-    dto.setTradeId("NULLMD");
-    dto.setVersion(1);
-    dto.setPrice(new BigDecimal("4.00"));
-    dto.setMaturityDate(null);
-
-    TradeEntity result = service.createOrUpdateTrade(dto);
-
-    assertThat(result).isNotNull();
-    ArgumentCaptor<TradeHistory> captor = ArgumentCaptor.forClass(TradeHistory.class);
-    verify(tradeHistoryRepository).save(captor.capture());
-    TradeHistory hist = captor.getValue();
-    // maturityDate may be stored as null in the after map
-    assertThat(hist.getAfter()).containsKey("maturityDate");
-    assertThat(hist.getAfter().get("maturityDate")).isNull();
   }
 
   @Test
@@ -351,7 +324,8 @@ public class TradeServiceImplTest {
               }));
     }
 
-    for (Future<?> f : futures) f.get();
+    for (Future<?> f : futures)
+      f.get();
     ex.shutdownNow();
 
     assertThat(saveCount.get()).isEqualTo(threads);

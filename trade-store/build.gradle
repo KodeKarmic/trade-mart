@@ -64,6 +64,12 @@ dependencies {
     // JMH for performance harness (kept separate from unit tests)
     jmh 'org.openjdk.jmh:jmh-core:1.36'
     jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
+    // Domain + expiry logic extracted to standalone module
+    implementation project(':trade-expiry')
+    // Centralised clock/time service
+    implementation project(':trade-clock')
+    // Shared domain exceptions
+    implementation project(':trade-common')
 }
 
 test {
@@ -131,6 +137,10 @@ dependencies {
     integrationTestImplementation 'org.testcontainers:testcontainers:1.19.0'
 }
 
+// compute skipIntegration flag at configuration time so the onlyIf closure
+// does not reference the project script object (avoids configuration-cache errors)
+def skipIntegrationFlag = (System.getProperty('skipIntegration') ?: (project.hasProperty('skipIntegration') ? project.findProperty('skipIntegration') : 'false')).toString() == 'true'
+
 task integrationTest(type: Test) {
     description = 'Runs integration tests.'
     group = 'verification'
@@ -138,13 +148,10 @@ task integrationTest(type: Test) {
     classpath = sourceSets.integrationTest.runtimeClasspath
     useJUnitPlatform()
     // pass skipIntegration into integration test JVM
-    def skipProp = System.getProperty('skipIntegration') ?: (project.hasProperty('skipIntegration') ? project.property('skipIntegration') : 'false')
-    systemProperty 'skipIntegration', skipProp
+    systemProperty 'skipIntegration', skipIntegrationFlag.toString()
     // Don't run integration tests if skipIntegration set to true
     onlyIf {
-        def sys = System.getProperty('skipIntegration')
-        def prop = (project.hasProperty('skipIntegration') ? project.property('skipIntegration') : null)
-        !( (sys != null && sys.toString() == 'true') || (prop != null && prop.toString() == 'true') )
+        !skipIntegrationFlag
     }
 }
 
@@ -167,20 +174,20 @@ tasks.named('jmhJar', org.gradle.api.tasks.bundling.Jar).configure {
 dependencyCheck {
     // Generate both HTML and JSON reports
     formats = ['HTML', 'JSON']
-    
+
     // Fail build on CVSS score >= 7 (High and Critical)
     failBuildOnCVSS = 7
-    
+
     // Suppress false positives (add CVE IDs here as needed)
-    suppressionFile = file('config/dependency-check-suppressions.xml').exists() ? 
+    suppressionFile = file('config/dependency-check-suppressions.xml').exists() ?
         file('config/dependency-check-suppressions.xml').absolutePath : null
-    
+
     // Speed up scan by using cached data
     autoUpdate = true
-    
+
     // Output directory
     outputDirectory = file("${buildDir}/reports")
-    
+
     // NVD API Key (required for NVD CVE data updates)
     // Set via env var NVD_API_KEY or gradle property: ./gradlew -Pnvd.api.key=YOUR_KEY
     // Get free API key at: https://nvd.nist.gov/developers/request-an-api-key
@@ -189,4 +196,19 @@ dependencyCheck {
     } else if (System.getenv('NVD_API_KEY')) {
         nvdApiKey = System.getenv('NVD_API_KEY')
     }
+}
+
+// Build helpers for worker-mode batch image
+tasks.register('buildBatchJar', Copy) {
+    dependsOn tasks.named('bootJar')
+    from { tasks.named('bootJar').get().archiveFile.get().asFile }
+    into("${buildDir}/batch")
+    rename { 'trade-store-batch.jar' }
+}
+
+tasks.register('buildBatchImage', Exec) {
+    dependsOn tasks.named('buildBatchJar')
+    workingDir projectDir
+    // docker must be available on the PATH for this to succeed
+    commandLine 'docker', 'build', '-t', 'trade-store-batch:latest', '-f', 'worker.Dockerfile', '.'
 }

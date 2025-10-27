@@ -1,0 +1,18 @@
+plugins {
+    id 'java'
+}
+
+group = 'com.trademart'
+version = '0.1.0'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories { mavenCentral() }
+
+tasks.named('test') {
+    useJUnitPlatform()
+}

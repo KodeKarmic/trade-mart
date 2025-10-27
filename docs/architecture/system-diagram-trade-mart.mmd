@@ -1,0 +1,26 @@
+
+flowchart LR
+ Client(("Client")) -- HTTPS POST trades Bearer JWT --> Gateway
+ subgraph K8S["Kubernetes Cluster"]
+    direction TB
+        Gateway{{"Ingress / API Gateway"}}
+        TradeStore("trade-store")
+        TradeExpiry("trade-expiry")
+        TradeRepair("trade-repair")
+        KEDA["KEDA (autoscaler)"]
+        Kafka[("Kafka Cluster")]
+        OTEL["OpenTelemetry Collector"]
+        Prometheus["Prometheus + ServiceMonitor"]
+  end
+    
+    Gateway -- forward --> TradeStore
+    Gateway -- validate token JWKS --> OIDC["OIDC Identity Provider"]
+    TradeStore -- publish event --> Kafka
+    Kafka -- "consume trade.* topics" --> TradeStore
+    KEDA -- optionally scale --> TradeStore
+    TradeExpiry -- publish --> Kafka
+    TradeRepair -- publish --> Kafka
+    Prometheus -- scrape --> K8S
+    TradeStore -- logs --> ELK["Logging / ELK (optional)"]
+    Note1[["Notes:\n- Service-side JWT validation (JWKS)\n- Topics (examples): trade.ingested, trade.expired, trade.audit\n- Error payloads persisted to errors/ with retention policy"]] -.-> TradeStore
+    classDef note fill:#f9f,stroke:#333,stroke-width:1px

@@ -80,10 +80,9 @@ public class ExceptionConfig {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Object> handleMethodArgNotValid(
       MethodArgumentNotValidException ex, HttpServletRequest request) {
-    var errors =
-        ex.getBindingResult().getFieldErrors().stream()
-            .map(f -> java.util.Map.of("field", f.getField(), "message", f.getDefaultMessage()))
-            .collect(Collectors.toList());
+    var errors = ex.getBindingResult().getFieldErrors().stream()
+        .map(f -> java.util.Map.of("field", f.getField(), "message", f.getDefaultMessage()))
+        .collect(Collectors.toList());
 
     // Build response map allowing nulls for optional fields (traceId)
     Map<String, Object> body = new LinkedHashMap<>();
@@ -111,6 +110,38 @@ public class ExceptionConfig {
     body.put("errors", errors);
 
     log.debug("Request body validation failed: {}", errors);
+    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
+  }
+
+  @ExceptionHandler(IllegalArgumentException.class)
+  public ResponseEntity<Object> handleIllegalArgument(
+      IllegalArgumentException ex, HttpServletRequest request) {
+    // treat IllegalArgumentException thrown by validators as a bad request with
+    // structured body to preserve existing integration test expectations
+    log.debug("Illegal argument (validation) failed: {}", ex.getMessage());
+
+    Map<String, Object> body = new LinkedHashMap<>();
+    String timestamp = Instant.now().truncatedTo(ChronoUnit.MILLIS).toString();
+    body.put("timestamp", timestamp);
+    body.put("status", HttpStatus.BAD_REQUEST.value());
+    body.put("path", request == null ? null : request.getRequestURI());
+    body.put("error", HttpStatus.BAD_REQUEST.getReasonPhrase());
+    body.put("message", ex.getMessage());
+    String traceId = MDC.get("traceId");
+    if (traceId == null || traceId.isBlank()) {
+      traceId = UUID.randomUUID().toString();
+    }
+    body.put("traceId", traceId);
+
+    String msg = ex.getMessage() == null ? "" : ex.getMessage().toLowerCase();
+    String errorCode = "TRADE_REJECTED";
+    if (msg.contains("version")) {
+      errorCode = "VERSION_TOO_LOW";
+    } else if (msg.contains("maturity")) {
+      errorCode = "MATURITY_PAST";
+    }
+    body.put("errorCode", errorCode);
+
     return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
   }
 

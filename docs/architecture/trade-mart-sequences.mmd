@@ -1,0 +1,66 @@
+%% Trade-Mart sequence diagrams in Mermaid
+%% Module-level interactions only; includes alternate flows where applicable
+
+%% Trade-store ingestion (module-level)
+sequenceDiagram
+  autonumber
+  actor Client
+  participant Gateway as "API Gateway / Ingress"
+  participant TradeStore as "trade-store (Service)"
+  participant OIDC as "OIDC / Identity Provider"
+  participant Kafka as "Kafka (broker)"
+
+  Client->>Gateway: POST /trades (JSON)\nBearer JWT
+  Gateway->>TradeStore: Forward request
+  TradeStore->>OIDC: Validate JWT
+  alt token valid and payload valid
+    TradeStore->>Kafka: Publish `trade.ingested`
+    TradeStore-->>Gateway: 201 Created
+  else invalid token or payload
+    TradeStore-->>Gateway: 4xx (Bad Request / Unauthorized)
+  end
+
+%% Trade-expiry scheduled flow (module-level)
+sequenceDiagram
+  autonumber
+  participant Scheduler as "Scheduler / Cron"
+  participant Expiry as "trade-expiry (Service)"
+  participant Kafka as "Kafka (broker)"
+
+  Scheduler->>Expiry: Trigger expiry job
+  alt trades due found
+    Expiry->>Kafka: Publish `trade.expired` events
+  else none due
+    Note right of Expiry: No-op
+  end
+
+%% Trade-repair (module-level)
+sequenceDiagram
+  autonumber
+  actor Operator
+  participant Repair as "trade-repair (Service)"
+  participant Kafka as "Kafka (broker)"
+
+  Operator->>Repair: Trigger repair (API / CLI)
+  alt repairs required
+    Repair->>Kafka: Publish `trade.repaired`
+    Repair-->>Operator: 200 OK (report)
+  else nothing to repair
+    Repair-->>Operator: 204 No Content (or report)
+  end
+
+%% OIDC token acquisition
+sequenceDiagram
+  autonumber
+  actor Client
+  participant OIDC as "OIDC / Identity Provider"
+
+  Client->>OIDC: OAuth2 flow (auth/code or client-creds)
+  alt auth successful
+    OIDC-->>Client: Issue JWT (access_token)
+  else failed
+    OIDC-->>Client: 4xx error
+  end
+
+%% Notes
+Note left of TradeStore: Topic names are examples: `trade.ingested`, `trade.expired`, `trade.repaired`, `trade.processed`.

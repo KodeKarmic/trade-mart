@@ -1,0 +1,52 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledJob
+metadata:
+  name: trade-store-kafka-scaledjob
+  namespace: default
+spec:
+  jobTargetRef:
+    parallelism: 1
+    completions: 1
+    backoffLimit: 4
+    template:
+      spec:
+        restartPolicy: Never
+        containers:
+          - name: trade-batch-worker
+            # Replace with an image that runs a batch/worker mode of your app
+            image: your-registry/trade-store:latest
+            imagePullPolicy: IfNotPresent
+            # Example command; adjust to your artifact and args
+            command: ["/bin/sh", "-c", "java -jar /app/trade-store.jar --spring.profiles.active=batch"]
+            env:
+              - name: KAFKA_BOOTSTRAP_SERVERS
+                value: "my-cluster-kafka-bootstrap.kafka.svc:9092"
+              - name: KAFKA_TOPIC
+                value: "trades"
+              - name: KAFKA_CONSUMER_GROUP
+                value: "trade-store-batch-group"
+            resources: {}
+
+  pollingInterval: 30
+  successfulJobsHistoryLimit: 5
+  failedJobsHistoryLimit: 1
+  maxReplicaCount: 10
+  triggers:
+    - type: kafka
+      metadata:
+        bootstrapServers: my-cluster-kafka-bootstrap.kafka.svc:9092
+        topic: trades
+        consumerGroup: trade-store-batch-group
+        lagThreshold: '500'
+      authenticationRef:
+        name: kafka-auth
+
+---
+# Notes:
+# - This ScaledJob example creates Kubernetes Jobs to process backlog when Kafka lag exceeds `lagThreshold`.
+# - The Job template should run a short-lived worker that consumes a slice of messages and exits when done.
+# - Configure the Job's command to run in 'batch' or 'worker' mode (not the continuous consumer).
+# - `maxReplicaCount` limits the maximum concurrent Job instances created by KEDA.
+# - If your Kafka cluster does not require auth, remove the `authenticationRef` block.
+# - For TLS/SASL authentication you can reuse the `TriggerAuthentication` + Secret example from
+#   `keda-kafka-scaledobject-example.yaml` (ensure secret names and namespaces match).

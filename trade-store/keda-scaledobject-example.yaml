@@ -1,0 +1,19 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: trade-store-scaledobject
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: trade-store-deployment
+  pollingInterval: 30     # seconds between checks
+  cooldownPeriod: 300     # seconds to wait after scale down before next scale action
+  minReplicaCount: 1
+  maxReplicaCount: 10
+  triggers:
+  - type: prometheus
+    metadata:
+      serverAddress: http://prometheus-operated.monitoring.svc:9090
+      # Query should return a single numeric value. We sum the pending gauge across pods.
+      query: "sum(trade_processor_pending_messages)"
+      threshold: '5'

@@ -1,0 +1,60 @@
+apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: trade-store-kafka-scaledobject
+  namespace: default
+spec:
+  scaleTargetRef:
+    name: trade-store-deployment
+  pollingInterval: 30
+  cooldownPeriod: 300
+  minReplicaCount: 1
+  maxReplicaCount: 50
+  triggers:
+    - type: kafka
+      metadata:
+        # Replace with your cluster's bootstrap service DNS name
+        bootstrapServers: my-cluster-kafka-bootstrap.kafka.svc:9092
+        topic: trades
+        consumerGroup: trade-store-group
+        # Threshold of unprocessed messages (lag) that triggers scaling
+        lagThreshold: '100'
+        # Optional: how to treat missing offsets (latest|earliest)
+        offsetResetPolicy: latest
+      # If your Kafka cluster requires SASL/SSL auth, use authenticationRef below
+      # authenticationRef:
+      #   name: kafka-auth
+
+---
+# Example TriggerAuthentication + Secret for SASL/PLAIN (optional)
+# Only required if your Kafka cluster requires username/password authentication.
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kafka-credentials
+  namespace: default
+type: Opaque
+stringData:
+  saslUsername: "your-kafka-user"
+  saslPassword: "your-kafka-password"
+
+---
+apiVersion: keda.sh/v1alpha1
+kind: TriggerAuthentication
+metadata:
+  name: kafka-auth
+  namespace: default
+spec:
+  secretTargetRef:
+    - parameter: saslUsername
+      name: kafka-credentials
+      key: saslUsername
+    - parameter: saslPassword
+      name: kafka-credentials
+      key: saslPassword
+
+# Notes:
+# - Replace `my-cluster-kafka-bootstrap.kafka.svc:9092` with your Kafka bootstrap service.
+# - `lagThreshold` is the per-topic/consumer-group lag threshold that triggers scaling.
+# - KEDA supports more Kafka-related metadata depending on the scaler version (e.g. TLS, SASL mechanisms).
+# - If you use Kubernetes Secrets for TLS certificates or more advanced auth, bind them with `TriggerAuthentication`.

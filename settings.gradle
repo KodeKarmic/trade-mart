@@ -15,3 +15,9 @@ rootProject.name = 'trade-mart'
 include('app')
 // Include the trade-store subproject so root builds can reference it
 include('trade-store')
+// New standalone lifecycle / expiry module
+include('trade-expiry')
+include('trade-clock')
+include('trade-common')
+// Repair module to fix failed validation trades and resubmit
+include('trade-repair')
