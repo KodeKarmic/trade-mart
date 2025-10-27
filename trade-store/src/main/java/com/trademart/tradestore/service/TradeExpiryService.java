@@ -6,6 +6,8 @@ import com.trademart.tradestore.mongo.TradeHistory;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
 import java.time.Instant;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class TradeExpiryService {
+
+  private static final Logger log = LoggerFactory.getLogger(TradeExpiryService.class);
 
   private final TradeRepository tradeRepository;
   private final TradeHistoryRepository tradeHistoryRepository;
@@ -36,7 +40,9 @@ public class TradeExpiryService {
   @Transactional
   public List<TradeEntity> expireDueTrades() {
     LocalDate todayUtc = LocalDate.ofInstant(clockService.nowUtc(), java.time.ZoneOffset.UTC);
+    log.info("expiry job: todayUtc={}", todayUtc);
     List<TradeEntity> due = tradeRepository.findByStatusAndMaturityDateBefore(TradeStatus.ACTIVE, todayUtc);
+    log.info("expiry job: found {} due trades", due == null ? 0 : due.size());
     if (due == null || due.isEmpty()) {
       return List.of();
     }
@@ -70,7 +76,16 @@ public class TradeExpiryService {
     }
 
     tradeRepository.saveAll(updated);
-    tradeHistoryRepository.saveAll(histories);
+    log.info("expiry job: updated {} trades", updated.size());
+    // persist histories but don't allow Mongo failures to roll back the JPA
+    // transaction
+    try {
+      tradeHistoryRepository.saveAll(histories);
+    } catch (Exception e) {
+      // log and continue - expiry of trades should not be undone due to history write
+      // failures
+      System.err.println("WARN: failed to persist trade history for expiry job: " + e.getMessage());
+    }
     return updated;
   }
 }

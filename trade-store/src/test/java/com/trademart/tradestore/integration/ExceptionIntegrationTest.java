@@ -46,7 +46,9 @@ public class ExceptionIntegrationTest {
 
     String invalidJson = "{ \"tradeId\": \"T-X\" }";
 
-    var result = mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
+    var result = mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON)
+        .header("Authorization", "Bearer test-token")
+        .content(invalidJson))
         .andExpect(status().isBadRequest())
         .andReturn();
 

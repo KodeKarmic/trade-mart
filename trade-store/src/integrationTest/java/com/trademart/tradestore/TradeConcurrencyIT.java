@@ -56,6 +56,7 @@ public class TradeConcurrencyIT {
     registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
     registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
     registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
+    registry.add("trademart.expiry.enabled", () -> "false");
   }
 
   @LocalServerPort

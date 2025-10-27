@@ -6,6 +6,13 @@ plugins {
     id 'com.diffplug.spotless' version '6.21.0'
 }
 
+// Allow duplicate resource entries for integrationTest processing (some test resource files intentionally
+// overlap with unit test resources). Prefer including duplicates rather than failing the build.
+// Configure defensively (matching) so this build script doesn't fail during early configuration.
+tasks.matching { it.name == 'processIntegrationTestResources' }.configureEach {
+    duplicatesStrategy = org.gradle.api.file.DuplicatesStrategy.INCLUDE
+}
+
 group = 'com.trademart'
 version = '0.1.0'
 

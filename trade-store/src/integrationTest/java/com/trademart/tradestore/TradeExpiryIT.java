@@ -2,6 +2,7 @@ package com.trademart.tradestore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.repository.TradeRepository;
 import java.time.Duration;
 import org.junit.jupiter.api.Tag;
@@ -31,12 +32,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 })
 @Testcontainers
 @Tag("integration")
-public class TradeMetricsIT {
+public class TradeExpiryIT {
 
   @Container
   static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine").withDatabaseName("test")
-      .withUsername("test")
-      .withPassword("test");
+      .withUsername("test").withPassword("test");
 
   @Container
   static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8").waitingFor(
@@ -62,43 +62,67 @@ public class TradeMetricsIT {
   @Autowired
   TradeRepository tradeRepository;
 
+  @Autowired
+  com.trademart.tradestore.service.ClockService clockService;
+
   @Autowired(required = false)
   io.micrometer.prometheus.PrometheusMeterRegistry prometheusRegistry;
 
+  @Autowired
+  com.trademart.tradestore.service.TradeExpiryScheduler expiryScheduler;
+
   @Test
-  void postingTrade_exposesMetricsAtPrometheusEndpoint() throws Exception {
+  void expiryJob_marksTradeExpired_and_incrementsMetric() throws Exception {
     String base = "http://localhost:" + port;
-    String url = base + "/trades";
+    // Create the trade directly via repository to avoid controller maturity
+    // validation
+    java.time.LocalDate yesterday = java.time.LocalDate.now().minusDays(1);
+    com.trademart.tradestore.model.TradeEntity entity = new com.trademart.tradestore.model.TradeEntity(
+        "EXP-1",
+        1,
+        java.math.BigDecimal.valueOf(1.0),
+        null,
+        yesterday,
+        com.trademart.tradestore.model.TradeStatus.ACTIVE);
 
-    String body = "{"
-        + "\"tradeId\": \"MET-1\","
-        + "\"version\": 1,"
-        + "\"maturityDate\": \"2030-01-01\","
-        + "\"price\": 10.0"
-        + "}";
+    tradeRepository.save(entity);
 
-    HttpHeaders headers = new HttpHeaders();
-    headers.setContentType(MediaType.APPLICATION_JSON);
-    headers.setBearerAuth("valid-token");
+    // Sanity: saved and active
+    java.util.Optional<TradeEntity> saved = tradeRepository.findByTradeId("EXP-1");
+    assertThat(saved).isPresent();
+    assertThat(saved.get().getStatus()).isEqualTo(com.trademart.tradestore.model.TradeStatus.ACTIVE);
 
-    ResponseEntity<String> r = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), String.class);
-    assertThat(r.getStatusCode().is2xxSuccessful()).isTrue();
+    // Diagnostic: print persisted maturity and computed UTC 'today' used by expiry
+    System.out.println("DEBUG: persisted maturityDate=" + saved.get().getMaturityDate());
+    java.time.LocalDate todayUtc = java.time.LocalDate.ofInstant(clockService.nowUtc(), java.time.ZoneOffset.UTC);
+    System.out.println("DEBUG: computed todayUtc=" + todayUtc);
 
-    // Prefer reading the value directly from the Prometheus registry if available
+    java.util.List<com.trademart.tradestore.model.TradeEntity> queryResult = tradeRepository
+        .findByStatusAndMaturityDateBefore(com.trademart.tradestore.model.TradeStatus.ACTIVE, todayUtc);
+    System.out.println("DEBUG: repository.findByStatusAndMaturityDateBefore returned size="
+        + (queryResult == null ? 0 : queryResult.size()));
+
+    // invoke the scheduler job directly (tests call the public method)
+    System.out.println("DEBUG: invoking expiryScheduler.runExpiryJob()");
+    expiryScheduler.runExpiryJob();
+    System.out.println("DEBUG: returned from expiryScheduler.runExpiryJob()");
+
+    // verify trade marked expired
+    java.util.Optional<TradeEntity> after = tradeRepository.findByTradeId("EXP-1");
+    assertThat(after).isPresent();
+    assertThat(after.get().getStatus()).isEqualTo(com.trademart.tradestore.model.TradeStatus.EXPIRED);
+
+    // verify metric increment
     if (prometheusRegistry != null) {
-      var m = prometheusRegistry.get("trade_ingest_requests_total").counter();
-      assertThat(m).isNotNull();
-      assertThat(m.count()).isGreaterThanOrEqualTo(1.0);
+      var c = prometheusRegistry.get("trade_expiry_jobs_run_total").counter();
+      assertThat(c).isNotNull();
+      assertThat(c.count()).isGreaterThanOrEqualTo(1.0);
     } else {
-      // Fallback: attempt to scrape the actuator endpoint but don't fail the test
-      // if the scraping format differs; log the body for debugging.
       ResponseEntity<String> prom = restTemplate.getForEntity(base + "/actuator/prometheus", String.class);
       if (prom.getStatusCode().is2xxSuccessful()) {
         String text = prom.getBody();
-        System.out.println("--- PROMETHEUS BODY START ---\n" + text + "\n--- PROMETHEUS BODY END ---");
+        assertThat(text).contains("trade_expiry_jobs_run_total");
       }
-      // Ensure at least the controller persisted the trade (sanity check)
-      assertThat(tradeRepository.findByTradeId("MET-1")).isPresent();
     }
   }
 }

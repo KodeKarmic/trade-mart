@@ -62,6 +62,7 @@ public class TradeIngestionIT {
     registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
     // Ensure Hibernate will create the schema for the integration database instance
     registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
+    registry.add("trademart.expiry.enabled", () -> "false");
   }
 
   @LocalServerPort

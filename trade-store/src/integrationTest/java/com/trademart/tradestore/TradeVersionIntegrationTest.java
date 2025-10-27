@@ -43,6 +43,7 @@ public class TradeVersionIntegrationTest {
     registry.add("spring.datasource.username", postgres::getUsername);
     registry.add("spring.datasource.password", postgres::getPassword);
     registry.add("spring.datasource.driver-class-name", () -> "org.postgresql.Driver");
+    registry.add("trademart.expiry.enabled", () -> "false");
     registry.add("spring.jpa.hibernate.ddl-auto", () -> "create");
     // configure MongoDB URI for tests
     registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
