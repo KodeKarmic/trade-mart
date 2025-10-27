@@ -24,6 +24,8 @@ dependencies {
     // OAuth2 Resource Server for JWT validation
     implementation 'org.springframework.boot:spring-boot-starter-oauth2-resource-server'
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    // Micrometer Prometheus registry for /actuator/prometheus
+    implementation 'io.micrometer:micrometer-registry-prometheus'
     implementation 'io.opentelemetry:opentelemetry-api:1.28.0'
 
     // Streaming and persistence
