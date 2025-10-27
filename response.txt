@@ -1,0 +1,1 @@
+{"timestamp":"2025-10-27T03:08:22.108Z","status":500,"path":"/trades","error":"Internal Server Error","message":"Internal server error","traceId":"b1e9220f-b641-438f-b1e9-3e86c9ee789a","errorCode":"INTERNAL_ERROR"}
