@@ -85,8 +85,20 @@ done
 # This is normally unused
 # shellcheck disable=SC2034
 APP_BASE_NAME=${0##*/}
-# Discard cd standard output in case $CDPATH is set (https://github.com/gradle/gradle/issues/25036)
-APP_HOME=$( cd -P "${APP_HOME:-./}" > /dev/null && printf '%s\n' "$PWD" ) || exit
+# Determine APP_HOME from the script location (resolving symlinks) instead of relying
+# on the current working directory. This avoids duplicate path fragments when the
+# runner checks out the repository into a nested path like /home/runner/work/<repo>/<repo>.
+SCRIPT_PATH="$0"
+while [ -h "$SCRIPT_PATH" ] ; do
+        ls=$( ls -ld "$SCRIPT_PATH" )
+        link=${ls#*' -> '}
+        case $link in
+            /*) SCRIPT_PATH=$link ;;
+            *) SCRIPT_PATH=$( dirname "$SCRIPT_PATH" )/$link ;;
+        esac
+done
+SCRIPT_DIR=$( cd -P "$( dirname "$SCRIPT_PATH" )" > /dev/null && printf '%s\n' "$PWD" ) || exit
+APP_HOME="$SCRIPT_DIR"
 
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD=maximum
