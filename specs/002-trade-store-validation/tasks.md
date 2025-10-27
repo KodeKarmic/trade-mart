@@ -95,6 +95,9 @@
 - [ ] T031 Add CODE_REVIEW requirement: enforce one approving review and checklist validation before merge (document in CONTRIBUTING.md)
 - [ ] T032 Add malformed-data test: src/test/java/com/trademart/app/unit/TradeMalformedTest.java and handler in src/main/java/com/trademart/app/service/ValidationService.java
 - [ ] T033 Add error-message validation tests in src/test/java/com/trademart/app/integration/ErrorMessageIntegrationTest.java
+
+ - [x] T032 Add malformed-data test: src/test/java/com/trademart/app/unit/TradeMalformedTest.java and handler in src/main/java/com/trademart/app/service/ValidationService.java
+
 ---
 
 ## Dependencies & Execution Order
