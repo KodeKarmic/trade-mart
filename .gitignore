@@ -11,7 +11,6 @@ Thumbs.db
 ### Java / Gradle
 build/
 target/
-.gradle/
 *.class
 *.jar
 *.war
@@ -63,7 +62,5 @@ build
 
 # Recommended additions: IDE/project wrapper and test artifacts
 *.iml
-gradlew
-gradlew.bat
 build/test-results/
 build/reports/
