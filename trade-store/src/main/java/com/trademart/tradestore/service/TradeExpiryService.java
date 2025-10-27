@@ -6,12 +6,12 @@ import com.trademart.tradestore.mongo.TradeHistory;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
 import java.time.Instant;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,14 +34,15 @@ public class TradeExpiryService {
   }
 
   /**
-   * Mark trades whose maturity date is before 'today' (UTC) as EXPIRED.
-   * Writes a history document for each changed trade.
+   * Mark trades whose maturity date is before 'today' (UTC) as EXPIRED. Writes a history document
+   * for each changed trade.
    */
   @Transactional
   public List<TradeEntity> expireDueTrades() {
     LocalDate todayUtc = LocalDate.ofInstant(clockService.nowUtc(), java.time.ZoneOffset.UTC);
     log.info("expiry job: todayUtc={}", todayUtc);
-    List<TradeEntity> due = tradeRepository.findByStatusAndMaturityDateBefore(TradeStatus.ACTIVE, todayUtc);
+    List<TradeEntity> due =
+        tradeRepository.findByStatusAndMaturityDateBefore(TradeStatus.ACTIVE, todayUtc);
     log.info("expiry job: found {} due trades", due == null ? 0 : due.size());
     if (due == null || due.isEmpty()) {
       return List.of();
@@ -52,8 +53,14 @@ public class TradeExpiryService {
     Instant now = Instant.now();
 
     for (TradeEntity t : due) {
-      TradeEntity before = new TradeEntity(t.getTradeId(), t.getVersion(), t.getPrice(), t.getQuantity(),
-          t.getMaturityDate(), t.getStatus());
+      TradeEntity before =
+          new TradeEntity(
+              t.getTradeId(),
+              t.getVersion(),
+              t.getPrice(),
+              t.getQuantity(),
+              t.getMaturityDate(),
+              t.getStatus());
       t.setStatus(TradeStatus.EXPIRED);
       t.setUpdatedAt(now);
       updated.add(t);
@@ -62,14 +69,16 @@ public class TradeExpiryService {
       h.setTradeId(t.getTradeId());
       h.setVersion(t.getVersion());
       h.setChangeType("EXPIRE");
-      h.setBefore(Map.of(
-          "tradeId", before.getTradeId(),
-          "version", before.getVersion(),
-          "status", before.getStatus()));
-      h.setAfter(Map.of(
-          "tradeId", t.getTradeId(),
-          "version", t.getVersion(),
-          "status", t.getStatus()));
+      h.setBefore(
+          Map.of(
+              "tradeId", before.getTradeId(),
+              "version", before.getVersion(),
+              "status", before.getStatus()));
+      h.setAfter(
+          Map.of(
+              "tradeId", t.getTradeId(),
+              "version", t.getVersion(),
+              "status", t.getStatus()));
       h.setActor("system");
       h.setTimestamp(now);
       histories.add(h);

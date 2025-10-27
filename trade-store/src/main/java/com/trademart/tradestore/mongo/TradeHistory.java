@@ -8,8 +8,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @Document(collection = "trade_history")
 public class TradeHistory {
 
-  @Id
-  private String id;
+  @Id private String id;
 
   private String tradeId;
 
@@ -27,8 +26,7 @@ public class TradeHistory {
 
   private Long sequence;
 
-  public TradeHistory() {
-  }
+  public TradeHistory() {}
 
   public String getId() {
     return id;

@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.trademart.tradestore.repository.TradeRepository;
 import java.time.Duration;
-import java.time.LocalDate;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -24,18 +23,22 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@org.springframework.context.annotation.Import(com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class)
+@org.springframework.context.annotation.Import(
+    com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class)
 @Testcontainers
 @Tag("integration")
 public class TradeVersionIntegrationTest {
 
   @Container
-  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine").withDatabaseName("test")
-      .withUsername("test").withPassword("test");
+  static PostgreSQLContainer<?> postgres =
+      new PostgreSQLContainer<>("postgres:15-alpine")
+          .withDatabaseName("test")
+          .withUsername("test")
+          .withPassword("test");
 
   @Container
-  static org.testcontainers.containers.MongoDBContainer mongo = new org.testcontainers.containers.MongoDBContainer(
-      "mongo:6.0.8");
+  static org.testcontainers.containers.MongoDBContainer mongo =
+      new org.testcontainers.containers.MongoDBContainer("mongo:6.0.8");
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -49,14 +52,11 @@ public class TradeVersionIntegrationTest {
     registry.add("spring.data.mongodb.uri", mongo::getReplicaSetUrl);
   }
 
-  @LocalServerPort
-  int port;
+  @LocalServerPort int port;
 
-  @Autowired
-  TestRestTemplate restTemplate;
+  @Autowired TestRestTemplate restTemplate;
 
-  @Autowired
-  TradeRepository tradeRepository;
+  @Autowired TradeRepository tradeRepository;
 
   @BeforeAll
   static void beforeAll() throws Exception {
@@ -69,11 +69,13 @@ public class TradeVersionIntegrationTest {
     String baseUrl = "http://localhost:" + port + "/trades";
 
     // create initial trade with version 5
-    String t1 = "{\"tradeId\": \"DB-T1\", \"version\": 5, \"maturityDate\": \"2030-01-01\", \"price\": 100.00}";
+    String t1 =
+        "{\"tradeId\": \"DB-T1\", \"version\": 5, \"maturityDate\": \"2030-01-01\", \"price\": 100.00}";
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     headers.setBearerAuth("valid-token");
-    ResponseEntity<String> r1 = restTemplate.postForEntity(baseUrl, new HttpEntity<>(t1, headers), String.class);
+    ResponseEntity<String> r1 =
+        restTemplate.postForEntity(baseUrl, new HttpEntity<>(t1, headers), String.class);
     System.out.println("r1 status=" + r1.getStatusCode());
     assertThat(r1.getStatusCode().is2xxSuccessful()).isTrue();
 
@@ -83,8 +85,10 @@ public class TradeVersionIntegrationTest {
     // now attempt to post lower version 4 -> expect 4xx via service validation
     // include required fields so request passes DTO validation and is rejected by
     // version logic
-    String lower = "{\"tradeId\": \"DB-T1\", \"version\": 4, \"maturityDate\": \"2030-01-01\", \"price\": 99.00}";
-    ResponseEntity<String> r2 = restTemplate.postForEntity(baseUrl, new HttpEntity<>(lower, headers), String.class);
+    String lower =
+        "{\"tradeId\": \"DB-T1\", \"version\": 4, \"maturityDate\": \"2030-01-01\", \"price\": 99.00}";
+    ResponseEntity<String> r2 =
+        restTemplate.postForEntity(baseUrl, new HttpEntity<>(lower, headers), String.class);
     System.out.println("r2 status=" + r2.getStatusCode());
     assertThat(r2.getStatusCode().is4xxClientError()).isTrue();
 
@@ -94,8 +98,10 @@ public class TradeVersionIntegrationTest {
     assertThat(maxAfterLower).isEqualTo(5);
 
     // now post higher version 6 -> should succeed and update DB
-    String higher = "{\"tradeId\": \"DB-T1\", \"version\": 6, \"maturityDate\": \"2030-01-01\", \"price\": 110.00}";
-    ResponseEntity<String> r3 = restTemplate.postForEntity(baseUrl, new HttpEntity<>(higher, headers), String.class);
+    String higher =
+        "{\"tradeId\": \"DB-T1\", \"version\": 6, \"maturityDate\": \"2030-01-01\", \"price\": 110.00}";
+    ResponseEntity<String> r3 =
+        restTemplate.postForEntity(baseUrl, new HttpEntity<>(higher, headers), String.class);
     System.out.println("r3 status=" + r3.getStatusCode());
     assertThat(r3.getStatusCode().is2xxSuccessful()).isTrue();
 

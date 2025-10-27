@@ -13,3 +13,5 @@ plugins {
 
 rootProject.name = 'trade-mart'
 include('app')
+// Include the trade-store subproject so root builds can reference it
+include('trade-store')

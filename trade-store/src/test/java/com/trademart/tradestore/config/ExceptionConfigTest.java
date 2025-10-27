@@ -7,10 +7,11 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import com.trademart.tradestore.exception.TradeRejectedException;
+import com.trademart.tradestore.exception.TradeValidationException;
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.UUID;
-
-import jakarta.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
@@ -18,9 +19,6 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.validation.BeanPropertyBindingResult;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
-
-import com.trademart.tradestore.exception.TradeRejectedException;
-import com.trademart.tradestore.exception.TradeValidationException;
 
 public class ExceptionConfigTest {
 
@@ -30,7 +28,8 @@ public class ExceptionConfigTest {
     MockHttpServletRequest req = new MockHttpServletRequest();
     req.setRequestURI("/trades");
 
-    TradeRejectedException ex = new TradeRejectedException("incoming version is lower than existing");
+    TradeRejectedException ex =
+        new TradeRejectedException("incoming version is lower than existing");
     var resp = cfg.handleRejected(ex, req);
 
     assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());
@@ -108,7 +107,8 @@ public class ExceptionConfigTest {
     MockHttpServletRequest req = new MockHttpServletRequest();
     req.setRequestURI("/trades");
 
-    TradeValidationException ex = new TradeValidationException("incoming version is lower than existing");
+    TradeValidationException ex =
+        new TradeValidationException("incoming version is lower than existing");
     var resp = cfg.handleValidation(ex, req);
 
     assertEquals(HttpStatus.BAD_REQUEST, resp.getStatusCode());

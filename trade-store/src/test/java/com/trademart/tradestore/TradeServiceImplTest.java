@@ -7,6 +7,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import com.trademart.tradestore.exception.TradeRejectedException;
 import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.mongo.TradeHistory;
@@ -23,7 +24,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import com.trademart.tradestore.exception.TradeRejectedException;
 
 public class TradeServiceImplTest {
 
@@ -69,7 +69,8 @@ public class TradeServiceImplTest {
     saved.setVersion(1);
     saved.setPrice(new BigDecimal("9.99"));
 
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("NEW");
@@ -107,7 +108,8 @@ public class TradeServiceImplTest {
     saved.setTradeId("T-2");
     saved.setVersion(2);
     saved.setPrice(new BigDecimal("7.00"));
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("T-2");
@@ -136,7 +138,8 @@ public class TradeServiceImplTest {
     TradeEntity saved = new TradeEntity();
     saved.setTradeId("T-3");
     saved.setVersion(3);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("T-3");
@@ -175,7 +178,8 @@ public class TradeServiceImplTest {
     saved.setTradeId("TODAY");
     saved.setVersion(1);
     saved.setMaturityDate(LocalDate.now());
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("TODAY");
@@ -197,7 +201,8 @@ public class TradeServiceImplTest {
     saved.setTradeId("NULLMD");
     saved.setVersion(1);
     saved.setMaturityDate(null);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("NULLMD");
@@ -240,7 +245,8 @@ public class TradeServiceImplTest {
     TradeEntity saved = new TradeEntity();
     saved.setTradeId("HISTERR");
     saved.setVersion(1);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(saved);
 
     // make history save fail
     when(tradeHistoryRepository.save(any(TradeHistory.class)))
@@ -271,7 +277,8 @@ public class TradeServiceImplTest {
     saved.setTradeId("T-4");
     saved.setVersion(2);
     saved.setPrice(new BigDecimal("2.00"));
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("T-4");
@@ -344,8 +351,7 @@ public class TradeServiceImplTest {
               }));
     }
 
-    for (Future<?> f : futures)
-      f.get();
+    for (Future<?> f : futures) f.get();
     ex.shutdownNow();
 
     assertThat(saveCount.get()).isEqualTo(threads);
@@ -363,7 +369,8 @@ public class TradeServiceImplTest {
     saved.setTradeId("BIG");
     saved.setVersion(1);
     saved.setPrice(big);
-    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any())).thenReturn(saved);
+    when(tradeRepository.upsertTrade(any(), any(), any(), any(), any(), any(), any()))
+        .thenReturn(saved);
 
     TradeDto dto = new TradeDto();
     dto.setTradeId("BIG");

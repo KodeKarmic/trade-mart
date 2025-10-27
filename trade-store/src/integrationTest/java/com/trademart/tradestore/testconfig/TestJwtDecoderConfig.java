@@ -1,12 +1,9 @@
 package com.trademart.tradestore.testconfig;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
-import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtException;
@@ -14,10 +11,8 @@ import org.springframework.security.oauth2.jwt.JwtException;
 /**
  * Test configuration that provides a simple JwtDecoder for integration tests.
  *
- * Behavior:
- * - token value "no-scope" -> Jwt with no scopes
- * - token value "expired" -> throws JwtException
- * - any other token -> Jwt with scope "trade.ingest"
+ * <p>Behavior: - token value "no-scope" -> Jwt with no scopes - token value "expired" -> throws
+ * JwtException - any other token -> Jwt with scope "trade.ingest"
  */
 @TestConfiguration
 public class TestJwtDecoderConfig {

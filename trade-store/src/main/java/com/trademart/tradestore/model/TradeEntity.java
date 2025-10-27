@@ -1,9 +1,9 @@
 package com.trademart.tradestore.model;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Enumerated;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -16,11 +16,14 @@ import java.time.Instant;
 import java.time.LocalDate;
 
 @Entity
-@Table(name = "trades", indexes = {
-    @Index(name = "idx_trade_tradeid", columnList = "tradeId")
-}, uniqueConstraints = {
-    @UniqueConstraint(name = "uc_trade_tradeid", columnNames = { "tradeId" })
-})
+@Table(
+    name = "trades",
+    indexes = {@Index(name = "idx_trade_tradeid", columnList = "tradeId")},
+    uniqueConstraints = {
+      @UniqueConstraint(
+          name = "uc_trade_tradeid",
+          columnNames = {"tradeId"})
+    })
 public class TradeEntity {
 
   @Id
@@ -47,14 +50,12 @@ public class TradeEntity {
 
   private Instant updatedAt;
 
-  @Version
-  private Integer optLock;
+  @Version private Integer optLock;
 
   @Column(name = "ingest_sequence")
   private Long ingestSequence;
 
-  public TradeEntity() {
-  }
+  public TradeEntity() {}
 
   public TradeEntity(
       String tradeId,

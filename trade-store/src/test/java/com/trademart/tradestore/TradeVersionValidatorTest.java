@@ -1,7 +1,7 @@
 package com.trademart.tradestore;
 
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatNoException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.model.TradeEntity;

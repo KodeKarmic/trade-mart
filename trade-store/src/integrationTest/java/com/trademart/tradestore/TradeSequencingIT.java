@@ -27,21 +27,24 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@org.springframework.context.annotation.Import(com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class)
+@org.springframework.context.annotation.Import(
+    com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class)
 @Testcontainers
 @Tag("integration")
 public class TradeSequencingIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
-      .withDatabaseName("test")
-      .withUsername("test")
-      .withPassword("test");
+  static PostgreSQLContainer<?> postgres =
+      new PostgreSQLContainer<>("postgres:15-alpine")
+          .withDatabaseName("test")
+          .withUsername("test")
+          .withPassword("test");
 
   @Container
-  static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8")
-      .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
-      .withStartupTimeout(Duration.ofSeconds(120));
+  static MongoDBContainer mongo =
+      new MongoDBContainer("mongo:6.0.8")
+          .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
+          .withStartupTimeout(Duration.ofSeconds(120));
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -54,17 +57,13 @@ public class TradeSequencingIT {
     registry.add("trademart.expiry.enabled", () -> "false");
   }
 
-  @LocalServerPort
-  int port;
+  @LocalServerPort int port;
 
-  @Autowired
-  TestRestTemplate restTemplate;
+  @Autowired TestRestTemplate restTemplate;
 
-  @Autowired
-  TradeHistoryRepository tradeHistoryRepository;
+  @Autowired TradeHistoryRepository tradeHistoryRepository;
 
-  @Autowired
-  com.trademart.tradestore.repository.TradeRepository tradeRepository;
+  @Autowired com.trademart.tradestore.repository.TradeRepository tradeRepository;
 
   @BeforeAll
   static void beforeAll() throws Exception {
@@ -74,15 +73,14 @@ public class TradeSequencingIT {
     for (int i = 0; i < maxAttempts; i++) {
       try {
         try {
-          var res = mongo.execInContainer("mongosh", "--eval", "db.adminCommand({ping:1})", "--quiet");
-          if (res != null && res.getExitCode() == 0)
-            return;
+          var res =
+              mongo.execInContainer("mongosh", "--eval", "db.adminCommand({ping:1})", "--quiet");
+          if (res != null && res.getExitCode() == 0) return;
         } catch (Throwable ignored) {
         }
         try {
           var res2 = mongo.execInContainer("mongo", "--eval", "db.adminCommand({ping:1})");
-          if (res2 != null && res2.getExitCode() == 0)
-            return;
+          if (res2 != null && res2.getExitCode() == 0) return;
         } catch (Throwable ignored) {
         }
       } catch (Throwable t) {
@@ -98,26 +96,29 @@ public class TradeSequencingIT {
     // Submit trades out of logical order: B, A, C
     String url = "http://localhost:" + port + "/trades";
 
-    String tb = "{"
-        + "\"tradeId\": \"SEQ-B\","
-        + "\"version\": 1,"
-        + "\"maturityDate\": \"2030-01-01\","
-        + "\"price\": 10.0"
-        + "}";
+    String tb =
+        "{"
+            + "\"tradeId\": \"SEQ-B\","
+            + "\"version\": 1,"
+            + "\"maturityDate\": \"2030-01-01\","
+            + "\"price\": 10.0"
+            + "}";
 
-    String ta = "{"
-        + "\"tradeId\": \"SEQ-A\","
-        + "\"version\": 1,"
-        + "\"maturityDate\": \"2030-01-01\","
-        + "\"price\": 20.0"
-        + "}";
+    String ta =
+        "{"
+            + "\"tradeId\": \"SEQ-A\","
+            + "\"version\": 1,"
+            + "\"maturityDate\": \"2030-01-01\","
+            + "\"price\": 20.0"
+            + "}";
 
-    String tc = "{"
-        + "\"tradeId\": \"SEQ-C\","
-        + "\"version\": 1,"
-        + "\"maturityDate\": \"2030-01-01\","
-        + "\"price\": 30.0"
-        + "}";
+    String tc =
+        "{"
+            + "\"tradeId\": \"SEQ-C\","
+            + "\"version\": 1,"
+            + "\"maturityDate\": \"2030-01-01\","
+            + "\"price\": 30.0"
+            + "}";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -132,11 +133,14 @@ public class TradeSequencingIT {
 
     List<TradeHistory> all = tradeHistoryRepository.findAll();
     // filter to our three trades and sort by sequence asc
-    List<TradeHistory> selected = all.stream()
-        .filter(h -> Map.of("SEQ-A", true, "SEQ-B", true, "SEQ-C", true).containsKey(h.getTradeId()))
-        .filter(h -> h.getSequence() != null)
-        .sorted((a, b) -> Long.compare(a.getSequence(), b.getSequence()))
-        .collect(Collectors.toList());
+    List<TradeHistory> selected =
+        all.stream()
+            .filter(
+                h ->
+                    Map.of("SEQ-A", true, "SEQ-B", true, "SEQ-C", true).containsKey(h.getTradeId()))
+            .filter(h -> h.getSequence() != null)
+            .sorted((a, b) -> Long.compare(a.getSequence(), b.getSequence()))
+            .collect(Collectors.toList());
 
     assertThat(selected).hasSize(3);
 
@@ -165,7 +169,9 @@ public class TradeSequencingIT {
 
     // cross-check TradeHistory sequences match the Entity sequences for each
     // tradeId
-    var byId = selected.stream().collect(Collectors.toMap(TradeHistory::getTradeId, TradeHistory::getSequence));
+    var byId =
+        selected.stream()
+            .collect(Collectors.toMap(TradeHistory::getTradeId, TradeHistory::getSequence));
     assertThat(byId.get("SEQ-A")).isEqualTo(entA.getIngestSequence());
     assertThat(byId.get("SEQ-B")).isEqualTo(entB.getIngestSequence());
     assertThat(byId.get("SEQ-C")).isEqualTo(entC.getIngestSequence());

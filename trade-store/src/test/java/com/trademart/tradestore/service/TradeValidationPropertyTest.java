@@ -1,23 +1,22 @@
 package com.trademart.tradestore.service;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
 import net.jqwik.api.Property;
 import net.jqwik.api.Provide;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.ZoneOffset;
-import java.util.stream.Stream;
-
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-
 public class TradeValidationPropertyTest {
 
-  private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2025-10-27T00:00:00Z"), ZoneOffset.UTC);
+  private static final Clock FIXED_CLOCK =
+      Clock.fixed(Instant.parse("2025-10-27T00:00:00Z"), ZoneOffset.UTC);
 
   // Restrict the version domain to avoid jqwik mixing many extreme edge-cases
   // together.
@@ -27,7 +26,8 @@ public class TradeValidationPropertyTest {
     TradeValidationService svc = new TradeValidationService(new ClockService(FIXED_CLOCK));
 
     if (version < 0) {
-      assertThrows(com.trademart.tradestore.exception.TradeValidationException.class,
+      assertThrows(
+          com.trademart.tradestore.exception.TradeValidationException.class,
           () -> svc.validateForIngest("P1", version, null));
     } else {
       assertDoesNotThrow(() -> svc.validateForIngest("P1", version, null));
@@ -43,7 +43,8 @@ public class TradeValidationPropertyTest {
     LocalDate today = LocalDate.parse("2025-10-27");
 
     if (d.isBefore(today)) {
-      assertThrows(com.trademart.tradestore.exception.TradeValidationException.class,
+      assertThrows(
+          com.trademart.tradestore.exception.TradeValidationException.class,
           () -> svc.validateForIngest("D1", 1, d));
     } else {
       assertDoesNotThrow(() -> svc.validateForIngest("D1", 1, d));

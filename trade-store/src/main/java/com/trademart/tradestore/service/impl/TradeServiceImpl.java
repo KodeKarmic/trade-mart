@@ -5,17 +5,15 @@ import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.model.TradeStatus;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
-import com.trademart.tradestore.service.TradeService;
-import com.trademart.tradestore.service.TradeSequencer;
-import com.trademart.tradestore.service.TradeVersionValidator;
 import com.trademart.tradestore.service.TradeMaturityValidator;
+import com.trademart.tradestore.service.TradeSequencer;
+import com.trademart.tradestore.service.TradeService;
+import com.trademart.tradestore.service.TradeVersionValidator;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import com.trademart.tradestore.exception.TradeRejectedException;
 
 @Service
 public class TradeServiceImpl implements TradeService {
@@ -32,10 +30,14 @@ public class TradeServiceImpl implements TradeService {
       TradeSequencer tradeSequencer) {
     // keep existing constructor for tests/backwards compatibility by
     // delegating to the full constructor with a simple validator implementation.
-    this(tradeRepository, tradeHistoryRepository, tradeSequencer,
+    this(
+        tradeRepository,
+        tradeHistoryRepository,
+        tradeSequencer,
         new com.trademart.tradestore.service.impl.SimpleTradeVersionValidator(),
         new com.trademart.tradestore.service.impl.SimpleTradeMaturityValidator(
-            new com.trademart.tradestore.service.ClockService(java.time.Clock.systemDefaultZone())));
+            new com.trademart.tradestore.service.ClockService(
+                java.time.Clock.systemDefaultZone())));
   }
 
   @Autowired
@@ -76,22 +78,22 @@ public class TradeServiceImpl implements TradeService {
     entity.setMaturityDate(dto.getMaturityDate());
     entity.setStatus(TradeStatus.ACTIVE);
     entity.setUpdatedAt(Instant.now());
-    if (entity.getCreatedAt() == null)
-      entity.setCreatedAt(Instant.now());
+    if (entity.getCreatedAt() == null) entity.setCreatedAt(Instant.now());
 
     // assign ingest sequence for ordering (must be done before persisting the row)
     long seq = tradeSequencer.nextSequence();
     entity.setIngestSequence(seq);
 
     // Use an atomic DB upsert to avoid concurrent-insert races.
-    TradeEntity saved = tradeRepository.upsertTrade(
-        entity.getTradeId(),
-        entity.getVersion(),
-        entity.getPrice(),
-        entity.getQuantity(),
-        entity.getMaturityDate(),
-        entity.getIngestSequence(),
-        entity.getStatus() == null ? null : entity.getStatus().name());
+    TradeEntity saved =
+        tradeRepository.upsertTrade(
+            entity.getTradeId(),
+            entity.getVersion(),
+            entity.getPrice(),
+            entity.getQuantity(),
+            entity.getMaturityDate(),
+            entity.getIngestSequence(),
+            entity.getStatus() == null ? null : entity.getStatus().name());
 
     // write history doc
     var hist = new com.trademart.tradestore.mongo.TradeHistory();

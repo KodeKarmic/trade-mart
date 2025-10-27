@@ -12,8 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 public class TradeSequencerTest {
 
-  @Mock
-  private JdbcTemplate jdbcTemplate;
+  @Mock private JdbcTemplate jdbcTemplate;
 
   private TradeSequencerImpl sequencer;
 

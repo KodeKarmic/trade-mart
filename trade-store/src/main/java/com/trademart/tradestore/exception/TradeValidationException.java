@@ -1,8 +1,6 @@
 package com.trademart.tradestore.exception;
 
-/**
- * Thrown when an incoming trade fails validation rules.
- */
+/** Thrown when an incoming trade fails validation rules. */
 public class TradeValidationException extends RuntimeException {
 
   private static final long serialVersionUID = 1L;

@@ -4,6 +4,8 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.0'
     id 'checkstyle'
     id 'com.diffplug.spotless' version '6.21.0'
+    // JMH microbenchmarking plugin
+    id 'me.champeau.jmh' version '0.7.1'
 }
 
 // Allow duplicate resource entries for integrationTest processing (some test resource files intentionally
@@ -56,6 +58,10 @@ dependencies {
     testImplementation 'de.flapdoodle.embed:de.flapdoodle.embed.mongo:3.4.6'
     // In-memory JDBC for tests (so DataSource auto-config can succeed in unit tests)
     testRuntimeOnly 'com.h2database:h2'
+
+    // JMH for performance harness (kept separate from unit tests)
+    jmh 'org.openjdk.jmh:jmh-core:1.36'
+    jmh 'org.openjdk.jmh:jmh-generator-annprocess:1.36'
 }
 
 test {
@@ -147,4 +153,10 @@ def includeIntegration = (System.getProperty('includeIntegration') == 'true') ||
 if (includeIntegration) {
     // Run integration tests as part of the normal test lifecycle
     test.finalizedBy integrationTest
+}
+
+// Ensure JMH plugin produces a Zip64-capable JAR to avoid the 65535-entry limit on large projects
+// Prefer explicit configuration of the jmhJar task to enable Zip64 support
+tasks.named('jmhJar', org.gradle.api.tasks.bundling.Jar).configure {
+    zip64 = true
 }

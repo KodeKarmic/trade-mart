@@ -2,10 +2,9 @@ package com.trademart.tradestore.streaming;
 
 import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.service.TradeService;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
-import io.micrometer.core.instrument.Metrics;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
@@ -42,9 +41,9 @@ public class TradeIngestionController {
       sample.stop(ingestTimer);
       // return 201 Created with location header pointing to resource
       return ResponseEntity.created(
-          org.springframework.web.util.UriComponentsBuilder.fromPath("/trades/{id}")
-              .buildAndExpand(saved.getTradeId())
-              .toUri())
+              org.springframework.web.util.UriComponentsBuilder.fromPath("/trades/{id}")
+                  .buildAndExpand(saved.getTradeId())
+                  .toUri())
           .body("created");
     } catch (RuntimeException ex) {
       ingestErrors.increment();

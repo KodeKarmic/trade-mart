@@ -6,9 +6,8 @@ import java.time.ZonedDateTime;
 import org.springframework.stereotype.Service;
 
 /**
- * Basic validation rules for incoming trades. This is an example of typed
- * exceptions
- * and how to use them in the codebase.
+ * Basic validation rules for incoming trades. This is an example of typed exceptions and how to use
+ * them in the codebase.
  */
 @Service
 public class TradeValidationService {

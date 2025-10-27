@@ -1,50 +1,46 @@
 package com.trademart.tradestore;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trademart.tradestore.config.ExceptionConfig;
+import com.trademart.tradestore.exception.TradeRejectedException;
 import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.service.TradeService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import org.hamcrest.Matchers;
-import org.slf4j.MDC;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import java.util.UUID;
+import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
+import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.context.annotation.Import;
-import com.trademart.tradestore.config.ExceptionConfig;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
-import com.trademart.tradestore.exception.TradeRejectedException;
 
 @WebMvcTest(controllers = com.trademart.tradestore.streaming.TradeIngestionController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import({ ExceptionConfig.class, TradeIngestionControllerTest.TestConfig.class })
+@Import({ExceptionConfig.class, TradeIngestionControllerTest.TestConfig.class})
 public class TradeIngestionControllerTest {
 
-  @Autowired
-  private MockMvc mvc;
+  @Autowired private MockMvc mvc;
 
-  @Autowired
-  private ObjectMapper mapper;
+  @Autowired private ObjectMapper mapper;
 
-  @MockBean
-  private TradeService tradeService;
+  @MockBean private TradeService tradeService;
 
-  @Autowired
-  private io.micrometer.core.instrument.MeterRegistry meterRegistry;
+  @Autowired private io.micrometer.core.instrument.MeterRegistry meterRegistry;
 
   @Test
   public void whenInvalidPayload_thenReturns400() throws Exception {
@@ -55,19 +51,28 @@ public class TradeIngestionControllerTest {
 
     mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
         .andExpect(status().isBadRequest())
-        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.status").value(400))
         .andExpect(
-            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.path").value("/trades"))
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.status")
+                .value(400))
         .andExpect(
-            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.error").value("Bad Request"))
-        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message")
-            .value("Validation failed"))
-        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.traceId")
-            .value("test-trace-1"))
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.path")
+                .value("/trades"))
         .andExpect(
-            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.timestamp").isNotEmpty())
-        .andExpect(org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.errors[*].field",
-            Matchers.containsInAnyOrder("maturityDate", "price")));
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.error")
+                .value("Bad Request"))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.message")
+                .value("Validation failed"))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath("$.traceId")
+                .value("test-trace-1"))
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath(
+                    "$.timestamp")
+                .isNotEmpty())
+        .andExpect(
+            org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath(
+                "$.errors[*].field", Matchers.containsInAnyOrder("maturityDate", "price")));
 
     MDC.remove("traceId");
   }
@@ -77,9 +82,10 @@ public class TradeIngestionControllerTest {
     String invalidJson = "{ \"tradeId\": \"T1\" }";
     MDC.put("traceId", "ts-test-1");
 
-    var result = mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
-        .andExpect(status().isBadRequest())
-        .andReturn();
+    var result =
+        mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andReturn();
 
     String content = result.getResponse().getContentAsString();
 
@@ -87,9 +93,11 @@ public class TradeIngestionControllerTest {
     String ts = node.get("timestamp").asText();
 
     // ISO_OFFSET_DATE_TIME with at least milliseconds (3 fractional digits)
-    java.util.regex.Pattern p = java.util.regex.Pattern.compile(
-        "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[+-]\\d{2}:\\d{2})$");
-    assertTrue(p.matcher(ts).matches(), "timestamp must be ISO_OFFSET_DATE_TIME with milliseconds: " + ts);
+    java.util.regex.Pattern p =
+        java.util.regex.Pattern.compile(
+            "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[+-]\\d{2}:\\d{2})$");
+    assertTrue(
+        p.matcher(ts).matches(), "timestamp must be ISO_OFFSET_DATE_TIME with milliseconds: " + ts);
 
     // also ensure it can be parsed as an OffsetDateTime
     java.time.OffsetDateTime odt = java.time.OffsetDateTime.parse(ts);
@@ -139,9 +147,10 @@ public class TradeIngestionControllerTest {
 
     String invalidJson = "{ \"tradeId\": \"T1\" }";
 
-    var result = mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
-        .andExpect(status().isBadRequest())
-        .andReturn();
+    var result =
+        mvc.perform(post("/trades").contentType(MediaType.APPLICATION_JSON).content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andReturn();
 
     String content = result.getResponse().getContentAsString();
     var node = mapper.readTree(content);

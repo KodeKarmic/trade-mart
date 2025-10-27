@@ -2,25 +2,25 @@ package com.trademart.tradestore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.trademart.tradestore.mongo.TradeHistory;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
+import com.trademart.tradestore.testconfig.TestJwtDecoderConfig;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import java.util.Map;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
-import com.trademart.tradestore.testconfig.TestJwtDecoderConfig;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -40,18 +40,20 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 public class TradeIngestionIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
-      .withDatabaseName("test")
-      .withUsername("test")
-      .withPassword("test");
+  static PostgreSQLContainer<?> postgres =
+      new PostgreSQLContainer<>("postgres:15-alpine")
+          .withDatabaseName("test")
+          .withUsername("test")
+          .withPassword("test");
 
   @Container
-  static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8")
-      // use a log-based wait strategy and extend the startup timeout to be more
-      // tolerant of transient socket/read issues during Mongo replica set
-      // initialization
-      .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
-      .withStartupTimeout(Duration.ofSeconds(120));
+  static MongoDBContainer mongo =
+      new MongoDBContainer("mongo:6.0.8")
+          // use a log-based wait strategy and extend the startup timeout to be more
+          // tolerant of transient socket/read issues during Mongo replica set
+          // initialization
+          .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
+          .withStartupTimeout(Duration.ofSeconds(120));
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -65,17 +67,13 @@ public class TradeIngestionIT {
     registry.add("trademart.expiry.enabled", () -> "false");
   }
 
-  @LocalServerPort
-  int port;
+  @LocalServerPort int port;
 
-  @Autowired
-  TestRestTemplate restTemplate;
+  @Autowired TestRestTemplate restTemplate;
 
-  @Autowired
-  TradeRepository tradeRepository;
+  @Autowired TradeRepository tradeRepository;
 
-  @Autowired
-  TradeHistoryRepository tradeHistoryRepository;
+  @Autowired TradeHistoryRepository tradeHistoryRepository;
 
   @BeforeAll
   static void beforeAll() throws Exception {
@@ -90,7 +88,8 @@ public class TradeIngestionIT {
       try {
         // prefer mongosh (newer images); fall back to legacy 'mongo' if present
         try {
-          var res = mongo.execInContainer("mongosh", "--eval", "db.adminCommand({ping:1})", "--quiet");
+          var res =
+              mongo.execInContainer("mongosh", "--eval", "db.adminCommand({ping:1})", "--quiet");
           if (res != null && res.getExitCode() == 0) {
             String out = res.getStdout();
             if (out != null && out.toLowerCase().contains("ok")) {
@@ -144,12 +143,13 @@ public class TradeIngestionIT {
     String url = "http://localhost:" + port + "/trades";
 
     // use a clearly past maturity date so the validator rejects it
-    String body = "{"
-        + "\"tradeId\": \"IT-PAST\","
-        + "\"version\": 1,"
-        + "\"maturityDate\": \"2000-01-01\","
-        + "\"price\": 10.00"
-        + "}";
+    String body =
+        "{"
+            + "\"tradeId\": \"IT-PAST\","
+            + "\"version\": 1,"
+            + "\"maturityDate\": \"2000-01-01\","
+            + "\"price\": 10.00"
+            + "}";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -170,12 +170,13 @@ public class TradeIngestionIT {
   @Test
   void validTradeShouldBePersistedAndReturn201() {
     String url = "http://localhost:" + port + "/trades";
-    String body = "{"
-        + "\"tradeId\": \"IT-T1\","
-        + "\"version\": 1,"
-        + "\"maturityDate\": \"2030-01-01\","
-        + "\"price\": 123.45"
-        + "}";
+    String body =
+        "{"
+            + "\"tradeId\": \"IT-T1\","
+            + "\"version\": 1,"
+            + "\"maturityDate\": \"2030-01-01\","
+            + "\"price\": 123.45"
+            + "}";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
@@ -207,10 +208,11 @@ public class TradeIngestionIT {
     if (mdObj instanceof LocalDate) {
       mdValue = (LocalDate) mdObj;
     } else if (mdObj instanceof java.util.Date) {
-      mdValue = ((java.util.Date) mdObj)
-          .toInstant()
-          .atZone(java.time.ZoneId.systemDefault())
-          .toLocalDate();
+      mdValue =
+          ((java.util.Date) mdObj)
+              .toInstant()
+              .atZone(java.time.ZoneId.systemDefault())
+              .toLocalDate();
     } else {
       mdValue = LocalDate.parse(mdObj.toString());
     }

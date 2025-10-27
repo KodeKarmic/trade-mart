@@ -1,16 +1,16 @@
 package com.trademart.tradestore.config;
 
-import org.springframework.context.annotation.Configuration;
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
-import org.springframework.security.config.annotation.web.builders.HttpSecurity;
-import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Profile;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtException;
 import java.util.Collections;
 import java.util.Map;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.jwt.JwtException;
+import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableMethodSecurity
@@ -22,9 +22,12 @@ public class SecurityConfig {
 
     // Basic resource-server config: require JWT auth and scope 'trade.ingest' for
     // POST /trades
-    http.authorizeHttpRequests(auth -> auth
-        .requestMatchers("/trades").hasAuthority("SCOPE_trade.ingest")
-        .anyRequest().permitAll());
+    http.authorizeHttpRequests(
+        auth ->
+            auth.requestMatchers("/trades")
+                .hasAuthority("SCOPE_trade.ingest")
+                .anyRequest()
+                .permitAll());
 
     http.oauth2ResourceServer(oauth2 -> oauth2.jwt());
 

@@ -2,19 +2,19 @@ package com.trademart.tradestore.service;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
-import java.util.stream.Stream;
 
 import com.trademart.tradestore.exception.TradeValidationException;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 public class TradeValidationServiceTest {
 
@@ -41,42 +41,47 @@ public class TradeValidationServiceTest {
 
   @Test
   void invalid_whenTradeIdBlank_throws() {
-    assertThrows(TradeValidationException.class, () -> validationService.validateForIngest("", 1, null));
+    assertThrows(
+        TradeValidationException.class, () -> validationService.validateForIngest("", 1, null));
   }
 
   @Test
   void happyPath_whenVeryLongTradeId_doesNotThrow() {
     StringBuilder sb = new StringBuilder();
-    for (int i = 0; i < 2000; i++)
-      sb.append('A');
+    for (int i = 0; i < 2000; i++) sb.append('A');
     String longId = sb.toString();
     assertDoesNotThrow(() -> validationService.validateForIngest(longId, 1, null));
   }
 
   @Test
   void invalid_whenTradeIdNull_throws() {
-    assertThrows(TradeValidationException.class, () -> validationService.validateForIngest(null, 1, null));
+    assertThrows(
+        TradeValidationException.class, () -> validationService.validateForIngest(null, 1, null));
   }
 
   @Test
   void invalid_whenVersionNegative_throws() {
-    assertThrows(TradeValidationException.class, () -> validationService.validateForIngest("T1", -1, null));
+    assertThrows(
+        TradeValidationException.class, () -> validationService.validateForIngest("T1", -1, null));
   }
 
   @Test
   void invalid_whenMaturityInPast_throws() {
     LocalDate yesterday = LocalDate.parse("2025-10-26");
-    assertThrows(TradeValidationException.class, () -> validationService.validateForIngest("T1", 1, yesterday));
+    assertThrows(
+        TradeValidationException.class,
+        () -> validationService.validateForIngest("T1", 1, yesterday));
   }
 
   @ParameterizedTest
-  @ValueSource(ints = { -1000, -10, -1 })
+  @ValueSource(ints = {-1000, -10, -1})
   void parameterized_invalidVersions_throw(int v) {
-    assertThrows(TradeValidationException.class, () -> validationService.validateForIngest("T_PV", v, null));
+    assertThrows(
+        TradeValidationException.class, () -> validationService.validateForIngest("T_PV", v, null));
   }
 
   @ParameterizedTest
-  @ValueSource(ints = { 0, 1, 10, 100, Integer.MAX_VALUE })
+  @ValueSource(ints = {0, 1, 10, 100, Integer.MAX_VALUE})
   void parameterized_validVersions_doNotThrow(int v) {
     assertDoesNotThrow(() -> validationService.validateForIngest("T_PV_OK", v, null));
   }
@@ -84,7 +89,8 @@ public class TradeValidationServiceTest {
   @ParameterizedTest
   @MethodSource("pastDates")
   void parameterized_pastMaturities_throw(LocalDate d) {
-    assertThrows(TradeValidationException.class, () -> validationService.validateForIngest("T_PD", 1, d));
+    assertThrows(
+        TradeValidationException.class, () -> validationService.validateForIngest("T_PD", 1, d));
   }
 
   @ParameterizedTest
@@ -116,7 +122,9 @@ public class TradeValidationServiceTest {
 
   @Test
   void invalid_whenVersionNull_throws() {
-    assertThrows(TradeValidationException.class, () -> validationService.validateForIngest("T1", null, null));
+    assertThrows(
+        TradeValidationException.class,
+        () -> validationService.validateForIngest("T1", null, null));
   }
 
   @Test
@@ -140,7 +148,8 @@ public class TradeValidationServiceTest {
   void timezone_edge_clockWithZone_doesNotAffectUtcComparison() {
     // Use a clock fixed with a non-UTC zone to ensure validation uses UTC
     // internally
-    Clock fixedWithZone = Clock.fixed(Instant.parse("2025-10-27T00:30:00Z"), ZoneId.of("Asia/Kolkata"));
+    Clock fixedWithZone =
+        Clock.fixed(Instant.parse("2025-10-27T00:30:00Z"), ZoneId.of("Asia/Kolkata"));
     ClockService cs = new ClockService(fixedWithZone);
     TradeValidationService svc = new TradeValidationService(cs);
 

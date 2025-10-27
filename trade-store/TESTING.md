@@ -131,4 +131,3 @@ ResponseEntity<String> resp = restTemplate.postForEntity(url, req, String.class)
 There is also a permissive, development-only `JwtDecoder` bean in `SecurityConfig` that
 is active only under the `dev` Spring profile; it is intended purely for local
 convenience and should not be used in CI/production.
-

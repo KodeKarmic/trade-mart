@@ -23,12 +23,13 @@ import org.mockito.Mockito;
 public class TradeServiceImplTest {
 
   private final TradeRepository tradeRepository = Mockito.mock(TradeRepository.class);
-  private final TradeHistoryRepository tradeHistoryRepository = Mockito.mock(TradeHistoryRepository.class);
-  private final com.trademart.tradestore.service.TradeSequencer tradeSequencer = Mockito.mock(
-      com.trademart.tradestore.service.TradeSequencer.class);
+  private final TradeHistoryRepository tradeHistoryRepository =
+      Mockito.mock(TradeHistoryRepository.class);
+  private final com.trademart.tradestore.service.TradeSequencer tradeSequencer =
+      Mockito.mock(com.trademart.tradestore.service.TradeSequencer.class);
 
-  private final TradeServiceImpl subject = new TradeServiceImpl(tradeRepository,
-      tradeHistoryRepository, tradeSequencer);
+  private final TradeServiceImpl subject =
+      new TradeServiceImpl(tradeRepository, tradeHistoryRepository, tradeSequencer);
 
   @BeforeEach
   void setUp() {
@@ -38,8 +39,14 @@ public class TradeServiceImplTest {
 
   @Test
   void shouldRejectLowerVersion() {
-    TradeEntity existing = new TradeEntity(
-        "T1", 5, new BigDecimal("100.00"), 1, LocalDate.parse("2025-12-31"), TradeStatus.ACTIVE);
+    TradeEntity existing =
+        new TradeEntity(
+            "T1",
+            5,
+            new BigDecimal("100.00"),
+            1,
+            LocalDate.parse("2025-12-31"),
+            TradeStatus.ACTIVE);
 
     when(tradeRepository.findByTradeId("T1")).thenReturn(Optional.of(existing));
 

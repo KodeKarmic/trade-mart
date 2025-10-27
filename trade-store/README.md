@@ -54,4 +54,3 @@ decoder by setting `spring.security.oauth2.resourceserver.jwt.jwk-set-uri` to yo
 identity provider's JWKS endpoint (or provide a custom `JwtDecoder` bean). The dev
 permissive decoder is bound to the `dev` profile so it won't be active unless explicitly
 enabled.
-
