@@ -25,6 +25,18 @@ Where to look for results and reports
 - Unit test reports: `trade-store/build/reports/tests/test`
 - JMH results: `trade-store/build/results/jmh/results.txt` (and console capture `build/jmh-run.log`)
 
+JMH run summary (latest)
+
+- Benchmark: `com.trademart.perf.TradeExpiryBenchmark.checkExpiryLoop`
+- Mode: Throughput (ops/s)
+- Average (measured): ~159,344 ops/s (99.9% CI: [147,063 .. 171,626])
+- Result file: `trade-store/build/results/jmh/results.txt`
+- Notes: the benchmark is synthetic and measures a simple LocalDate-based expiry loop; use a profiler and larger factorial experiments before drawing production conclusions.
+
+Configuration cache note
+
+- The JMH run completed but the Gradle build logged a configuration cache serialization warning at the end (does not affect the benchmark results) pointing at `:trade-store:jmhJar`. This is a build-system artifact and does not change runtime results; if desired we can adjust the Gradle config to avoid storing problematic objects in the configuration cache.
+
 Notes and next steps
 - Phase 6 still has outstanding items: code cleanup, security hardening, CI vulnerability scan and quickstart validation. I added a minimal CI workflow to run the test suite (see `.github/workflows/ci.yml`) to ensure tests run on PRs.
 - If you'd like, I can convert the simplified unit test into a Spring-backed repository/integration test (requires Testcontainers or running local Mongo/Postgres). Ask and I'll implement that next.

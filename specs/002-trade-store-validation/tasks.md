@@ -90,10 +90,18 @@
 
 - [x] T023 [P] Documentation updates in docs/ (added feature README and quickstart)
 - [x] T024 Code cleanup and refactoring
-- [ ] T025 Performance optimization in src/main/java/com/trademart/app/service/
-- [x] T026 [P] Additional unit tests in src/test/java/com/trademart/app/unit/ (added a small edge-case unit test verifying maturity==today logic)
-- [ ] T027 Security hardening in src/main/java/com/trademart/app/config/SecurityConfig.java
+- [ ] T025 Performance optimization in service
+- [x] T026 [P] Additional unit tests (added a small edge-case unit test verifying maturity==today logic)
+- [ ] T027 Security hardening in SecurityConfig.java
 - [ ] T028 Run quickstart.md validation
+ -## Phase 6 status (progress update)
+ 
+ - [x] T023 [P] Documentation updates in docs/ (added feature README and quickstart)
+ - [x] T024 Code cleanup and refactoring
+ - [x] T025 Performance optimization in src/main/java/com/trademart/app/service/ (JMH benchmark added and run; results recorded in README)
+ - [x] T026 [P] Additional unit tests in src/test/java/com/trademart/app/unit/ (added a small edge-case unit test verifying maturity==today logic)
+ - [ ] T027 Security hardening in src/main/java/com/trademart/app/config/SecurityConfig.java
+ - [ ] T028 Run quickstart.md validation
 
 -## Phase 6.1: Quality & Security (added tasks)
 
