@@ -5,10 +5,8 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 
 /**
- * Integration test configuration that provides no-op expiry-related beans so
- * the
- * trade-store integration tests don't require the full trade-expiry module
- * wiring.
+ * Integration test configuration that provides no-op expiry-related beans so the trade-store
+ * integration tests don't require the full trade-expiry module wiring.
  */
 @TestConfiguration
 public class TestExpiryConfig {
