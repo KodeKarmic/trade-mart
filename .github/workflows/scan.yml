@@ -21,7 +21,7 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Install prerequisites (jq/unzip)
+      - name: Install markdownlint-cli
         run: |
           sudo apt-get update
           sudo apt-get install -y jq unzip
