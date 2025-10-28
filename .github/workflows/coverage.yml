@@ -51,8 +51,14 @@ jobs:
           path: build/reports/jacoco/jacocoRootReport.xml
           retention-days: 7
 
+      - name: Prepare optional-steps environment
+        run: |
+          # set simple env flags so we don't use 'secrets' inside workflow 'if' expressions
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then echo "SONAR_ENABLED=true" >> $GITHUB_ENV; fi
+
+
       - name: Run SonarQube analysis (optional)
-        if: ${{ secrets.SONAR_TOKEN != null && secrets.SONAR_TOKEN != '' }}
+        if: env.SONAR_ENABLED == 'true'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
