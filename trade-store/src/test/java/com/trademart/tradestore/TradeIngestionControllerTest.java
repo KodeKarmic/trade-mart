@@ -10,10 +10,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.config.ExceptionConfig;
 import com.trademart.tradestore.exception.TradeRejectedException;
 import com.trademart.tradestore.model.TradeDto;
-import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.service.TradeService;
 import java.math.BigDecimal;
 import java.time.LocalDate;

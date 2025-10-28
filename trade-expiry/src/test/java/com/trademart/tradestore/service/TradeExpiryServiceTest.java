@@ -5,10 +5,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.trademart.tradestore.model.TradeEntity;
-import com.trademart.tradestore.model.TradeStatus;
-import com.trademart.tradestore.repository.TradeRepository;
-import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.time.LocalDate;
@@ -17,6 +13,12 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
+
+import com.trademart.tradeexpiry.model.TradeEntity;
+import com.trademart.tradeexpiry.model.TradeStatus;
+import com.trademart.tradeexpiry.repository.TradeRepository;
+import com.trademart.tradeexpiry.repository.mongo.TradeHistoryRepository;
+import com.trademart.tradeexpiry.service.TradeExpiryService;
 
 public class TradeExpiryServiceTest {
 

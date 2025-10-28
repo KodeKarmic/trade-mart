@@ -1,11 +1,11 @@
 package com.trademart.tradestore.service.impl;
 
-import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.model.TradeStatus;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
-import com.trademart.tradestore.service.TradeMaturityValidator;
+import com.trademart.tradeexpiry.service.TradeMaturityValidator;
+import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.service.TradeSequencer;
 import com.trademart.tradestore.service.TradeService;
 import com.trademart.tradestore.service.TradeVersionValidator;
@@ -65,22 +65,22 @@ public class TradeServiceImpl implements TradeService {
     entity.setMaturityDate(dto.getMaturityDate());
     entity.setStatus(TradeStatus.ACTIVE);
     entity.setUpdatedAt(Instant.now());
-    if (entity.getCreatedAt() == null) entity.setCreatedAt(Instant.now());
+    if (entity.getCreatedAt() == null)
+      entity.setCreatedAt(Instant.now());
 
     // assign ingest sequence for ordering (must be done before persisting the row)
     long seq = tradeSequencer.nextSequence();
     entity.setIngestSequence(seq);
 
     // Use an atomic DB upsert to avoid concurrent-insert races.
-    TradeEntity saved =
-        tradeRepository.upsertTrade(
-            entity.getTradeId(),
-            entity.getVersion(),
-            entity.getPrice(),
-            entity.getQuantity(),
-            entity.getMaturityDate(),
-            entity.getIngestSequence(),
-            entity.getStatus() == null ? null : entity.getStatus().name());
+    TradeEntity saved = tradeRepository.upsertTrade(
+        entity.getTradeId(),
+        entity.getVersion(),
+        entity.getPrice(),
+        entity.getQuantity(),
+        entity.getMaturityDate(),
+        entity.getIngestSequence(),
+        entity.getStatus() == null ? null : entity.getStatus().name());
 
     // write history doc
     var hist = new com.trademart.tradestore.mongo.TradeHistory();

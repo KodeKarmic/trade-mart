@@ -1,11 +1,13 @@
-package com.trademart.tradestore.service;
+package com.trademart.tradeexpiry.service;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import org.springframework.stereotype.Service;
 
+import com.trademart.tradestore.service.ClockService;
+
 /** Basic validation rules for incoming trades (moved from trade-store). */
-@Service
+@Service("tradeExpiryTradeValidationService")
 public class TradeValidationService {
   private final ClockService clockService;
 

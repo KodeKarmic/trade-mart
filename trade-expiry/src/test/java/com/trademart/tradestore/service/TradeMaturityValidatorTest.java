@@ -3,12 +3,13 @@ package com.trademart.tradestore.service;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.trademart.tradestore.service.impl.SimpleTradeMaturityValidator;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import org.junit.jupiter.api.Test;
+
+import com.trademart.tradeexpiry.service.impl.SimpleTradeMaturityValidator;
 
 class TradeMaturityValidatorTest {
 

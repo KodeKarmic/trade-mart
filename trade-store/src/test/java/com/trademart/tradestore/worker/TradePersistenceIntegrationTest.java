@@ -1,9 +1,9 @@
 package com.trademart.tradestore.worker;
 
-import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.mongo.TradeHistory;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
+import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.service.TradeService;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -22,10 +22,26 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 class TradePersistenceIntegrationTest {
 
+  @org.springframework.boot.test.context.TestConfiguration
+  static class TestBeans {
+    @org.springframework.context.annotation.Bean
+    public com.trademart.tradeexpiry.service.TradeMaturityValidator tradeMaturityValidator() {
+      return maturityDate -> {
+        // no-op maturity validation for this integration test
+      };
+    }
+
+    @org.springframework.context.annotation.Bean
+    public com.trademart.tradeexpiry.repository.TradeRepository tradeExpiryRepository() {
+      return org.mockito.Mockito.mock(com.trademart.tradeexpiry.repository.TradeRepository.class);
+    }
+  }
+
   @Container
   static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine");
 
-  @Container static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8");
+  @Container
+  static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8");
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -40,9 +56,12 @@ class TradePersistenceIntegrationTest {
     registry.add("spring.flyway.enabled", () -> "true");
   }
 
-  @Autowired TradeService tradeService;
-  @Autowired TradeRepository tradeRepository;
-  @Autowired TradeHistoryRepository tradeHistoryRepository;
+  @Autowired
+  TradeService tradeService;
+  @Autowired
+  TradeRepository tradeRepository;
+  @Autowired
+  TradeHistoryRepository tradeHistoryRepository;
 
   @Test
   void createTradePersistsEntityAndHistory() {

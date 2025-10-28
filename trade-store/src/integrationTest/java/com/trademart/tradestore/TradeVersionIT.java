@@ -4,10 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.trademart.tradestore.model.TradeEntity;
-import com.trademart.tradestore.mongo.TradeHistory;
-import com.trademart.tradestore.repository.TradeRepository;
-import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
+import com.trademart.tradeexpiry.model.TradeEntity;
+import com.trademart.tradeexpiry.mongo.TradeHistory;
+import com.trademart.tradeexpiry.repository.TradeRepository;
+import com.trademart.tradeexpiry.repository.mongo.TradeHistoryRepository;
+
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;

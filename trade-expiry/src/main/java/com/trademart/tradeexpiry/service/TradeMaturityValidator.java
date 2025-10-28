@@ -1,4 +1,4 @@
-package com.trademart.tradestore.service;
+package com.trademart.tradeexpiry.service;
 
 import java.time.LocalDate;
 

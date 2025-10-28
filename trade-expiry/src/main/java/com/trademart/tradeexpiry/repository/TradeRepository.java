@@ -1,13 +1,14 @@
-package com.trademart.tradestore.repository;
+package com.trademart.tradeexpiry.repository;
 
-import com.trademart.tradestore.model.TradeEntity;
-import com.trademart.tradestore.model.TradeStatus;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+
+import com.trademart.tradeexpiry.model.TradeEntity;
+import com.trademart.tradeexpiry.model.TradeStatus;
 
 public interface TradeRepository extends JpaRepository<TradeEntity, Long>, TradeRepositoryCustom {
   Optional<TradeEntity> findByTradeId(String tradeId);

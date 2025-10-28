@@ -1,7 +1,7 @@
-package com.trademart.tradestore.service.impl;
+package com.trademart.tradeexpiry.service.impl;
 
 import com.trademart.tradestore.service.ClockService;
-import com.trademart.tradestore.service.TradeMaturityValidator;
+import com.trademart.tradeexpiry.service.TradeMaturityValidator;
 import com.trademart.tradestore.exception.TradeValidationException;
 import java.time.LocalDate;
 import org.springframework.stereotype.Component;

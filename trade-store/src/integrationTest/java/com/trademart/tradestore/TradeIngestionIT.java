@@ -3,9 +3,9 @@ package com.trademart.tradestore;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.trademart.tradestore.mongo.TradeHistory;
-import com.trademart.tradestore.repository.TradeRepository;
-import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
+import com.trademart.tradeexpiry.mongo.TradeHistory;
+import com.trademart.tradeexpiry.repository.TradeRepository;
+import com.trademart.tradeexpiry.repository.mongo.TradeHistoryRepository;
 import com.trademart.tradestore.testconfig.TestJwtDecoderConfig;
 import java.math.BigDecimal;
 import java.time.Duration;

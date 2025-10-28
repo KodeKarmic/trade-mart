@@ -1,4 +1,4 @@
-package com.trademart.tradestore.mongo;
+package com.trademart.tradeexpiry.mongo;
 
 import java.time.Instant;
 import java.util.Map;

@@ -7,12 +7,12 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.trademart.tradestore.exception.TradeRejectedException;
-import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.mongo.TradeHistory;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
+import com.trademart.tradestore.exception.TradeRejectedException;
+import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.service.impl.TradeServiceImpl;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -31,7 +31,7 @@ public class TradeServiceImplTest {
   private TradeHistoryRepository tradeHistoryRepository;
   private com.trademart.tradestore.service.TradeSequencer tradeSequencer;
   private com.trademart.tradestore.service.TradeVersionValidator versionValidator;
-  private com.trademart.tradestore.service.TradeMaturityValidator maturityValidator;
+  private com.trademart.tradeexpiry.service.TradeMaturityValidator maturityValidator;
   private TradeServiceImpl service;
 
   @BeforeEach
@@ -40,43 +40,54 @@ public class TradeServiceImplTest {
     tradeHistoryRepository = mock(TradeHistoryRepository.class);
     tradeSequencer = mock(com.trademart.tradestore.service.TradeSequencer.class);
     versionValidator = mock(com.trademart.tradestore.service.TradeVersionValidator.class);
-    maturityValidator = mock(com.trademart.tradestore.service.TradeMaturityValidator.class);
+    maturityValidator = mock(com.trademart.tradeexpiry.service.TradeMaturityValidator.class);
     when(tradeSequencer.nextSequence()).thenReturn(42L);
     // emulate original version validation logic
     org.mockito.Mockito.doAnswer(
-            inv -> {
-              com.trademart.tradestore.model.TradeDto incoming = inv.getArgument(0);
-              com.trademart.tradestore.model.TradeEntity existing = inv.getArgument(1);
-              if (existing != null
-                  && incoming.getVersion() != null
-                  && incoming.getVersion() < existing.getVersion()) {
-                throw new com.trademart.tradestore.exception.TradeRejectedException(
-                    "incoming version is lower than existing");
-              }
-              return null;
-            })
+        inv -> {
+          Object[] args = inv.getArguments();
+          TradeDto incoming = null;
+          if (args.length > 0 && args[0] instanceof TradeDto)
+            incoming = (TradeDto) args[0];
+          Object maybeExisting = args.length > 1 ? args[1] : null;
+          TradeEntity existing = null;
+          if (maybeExisting instanceof TradeEntity)
+            existing = (TradeEntity) maybeExisting;
+
+          if (existing != null
+              && incoming != null
+              && incoming.getVersion() != null
+              && incoming.getVersion() < existing.getVersion()) {
+            throw new TradeRejectedException(
+                "incoming version is lower than existing");
+          }
+          return null;
+        })
         .when(versionValidator)
-        .validate(any(), any());
+        .validate(any(TradeDto.class), any(TradeEntity.class));
     // emulate original maturity validation (throws domain TradeValidationException
     // now)
     org.mockito.Mockito.doAnswer(
-            inv -> {
-              java.time.LocalDate md = inv.getArgument(0);
-              if (md != null && md.isBefore(java.time.LocalDate.now())) {
-                throw new com.trademart.tradestore.exception.TradeValidationException(
-                    "maturity date is in the past");
-              }
-              return null;
-            })
+        inv -> {
+          Object[] args = inv.getArguments();
+          Object maybeMd = args.length > 0 ? args[0] : null;
+          if (maybeMd instanceof java.time.LocalDate) {
+            java.time.LocalDate md = (java.time.LocalDate) maybeMd;
+            if (md != null && md.isBefore(java.time.LocalDate.now())) {
+              throw new com.trademart.tradestore.exception.TradeValidationException(
+                  "maturity date is in the past");
+            }
+          }
+          return null;
+        })
         .when(maturityValidator)
-        .validate(any());
-    service =
-        new TradeServiceImpl(
-            tradeRepository,
-            tradeHistoryRepository,
-            tradeSequencer,
-            versionValidator,
-            maturityValidator);
+        .validate(any(java.time.LocalDate.class));
+    service = new TradeServiceImpl(
+        tradeRepository,
+        tradeHistoryRepository,
+        tradeSequencer,
+        versionValidator,
+        maturityValidator);
   }
 
   @Test
@@ -326,7 +337,8 @@ public class TradeServiceImplTest {
               }));
     }
 
-    for (Future<?> f : futures) f.get();
+    for (Future<?> f : futures)
+      f.get();
     ex.shutdownNow();
 
     assertThat(saveCount.get()).isEqualTo(threads);
