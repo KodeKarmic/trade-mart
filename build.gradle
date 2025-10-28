@@ -15,6 +15,40 @@ buildscript {
     }
 }
 
+// Ensure the SonarQube task runs after the aggregated JaCoCo report and configure the
+// discovered XML report paths at execution time. We avoid calling doLast inside the
+// Sonar properties DSL because the SonarProperties object doesn't support task
+// lifecycle methods.
+// Only configure Sonar task/extension if the Sonar plugin is actually present. Some
+// environments may not apply the plugin at the root project which would otherwise
+// cause configuration-time failures.
+pluginManager.withPlugin('org.sonarqube') {
+    // ensure sonarqube task runs after the jacoco aggregation
+    tasks.named('sonarqube') {
+        dependsOn 'jacocoRootReport'
+    }
+
+    // After evaluation discover jacoco XML paths and register them with Sonar
+    afterEvaluate {
+        def sonarExt = project.extensions.findByName('sonarqube')
+        if (sonarExt != null) {
+            def xmlFiles = fileTree(dir: rootDir, include: ['**/build/reports/jacoco/**/*.xml']).files.collect { it.path }
+            if (xmlFiles) {
+                // The Sonar extension exposes a properties map when configured via the
+                // plugin in some Gradle versions. Use put() on the map to avoid calling
+                // a non-existent property() method on a LinkedHashMap which causes a
+                // MissingMethodException during configuration.
+                sonarExt.properties.put('sonar.coverage.jacoco.xmlReportPaths', xmlFiles.join(','))
+                logger.lifecycle("Configured Sonar JaCoCo XML report paths: ${xmlFiles}")
+            } else {
+                logger.warn('No JaCoCo XML reports found under **/build/reports/jacoco/**/*.xml. Ensure jacocoTestReport runs before sonarqube.')
+            }
+        } else {
+            logger.warn('Sonar extension not found in project; skipping Sonar jacoco XML configuration')
+        }
+    }
+}
+
 apply plugin: 'org.sonarqube'
 
 // Add a root-level JaCoCo aggregation task that collects execution data and class/source
@@ -129,16 +163,8 @@ sonarqube {
         property "sonar.host.url", System.getenv('SONAR_HOST_URL') ?: 'https://sonarcloud.io'
         property "sonar.login", System.getenv('SONAR_TOKEN') ?: ''
 
-        // Discover JaCoCo XML reports produced by jacocoTestReport tasks in subprojects.
-        // We join them into a comma-separated list which Sonar expects.
-        doLast {
-            def xmlFiles = fileTree(dir: rootDir, include: ['**/build/reports/jacoco/**/*.xml']).files.collect { it.path }
-            if (xmlFiles) {
-                property 'sonar.coverage.jacoco.xmlReportPaths', xmlFiles.join(',')
-                logger.lifecycle("Configured Sonar JaCoCo XML report paths: ${xmlFiles}")
-            } else {
-                logger.warn('No JaCoCo XML reports found under **/build/reports/jacoco/**/*.xml. Ensure jacocoTestReport runs before sonarqube.')
-            }
-        }
+        // Static property placeholders — dynamic Jacoco XML paths are configured after project
+        // evaluation (see below) so we avoid calling task lifecycle methods from inside the
+        // Sonar Properties DSL which doesn't support doLast/doFirst.
     }
 }
