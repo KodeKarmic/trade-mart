@@ -8,7 +8,6 @@ import com.trademart.tradeexpiry.model.TradeEntity;
 import com.trademart.tradeexpiry.mongo.TradeHistory;
 import com.trademart.tradeexpiry.repository.TradeRepository;
 import com.trademart.tradeexpiry.repository.mongo.TradeHistoryRepository;
-
 import java.time.Duration;
 import java.time.OffsetDateTime;
 import java.util.List;

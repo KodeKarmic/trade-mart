@@ -2,6 +2,8 @@ package com.trademart.tradestore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.trademart.tradeexpiry.mongo.TradeHistory;
+import com.trademart.tradeexpiry.repository.mongo.TradeHistoryRepository;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -23,9 +25,6 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import com.trademart.tradeexpiry.mongo.TradeHistory;
-import com.trademart.tradeexpiry.repository.mongo.TradeHistoryRepository;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @org.springframework.context.annotation.Import(

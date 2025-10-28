@@ -5,12 +5,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trademart.tradeexpiry.repository.TradeRepository;
+import com.trademart.tradeexpiry.service.TradeMaturityValidator;
 import com.trademart.tradestore.service.TradeService;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import com.trademart.tradeexpiry.service.TradeMaturityValidator;
-import com.trademart.tradeexpiry.repository.TradeRepository;
 import org.slf4j.MDC;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -24,11 +24,9 @@ import org.springframework.test.web.servlet.MockMvc;
 @AutoConfigureMockMvc
 public class ExceptionIntegrationTest {
 
-  @Autowired
-  private MockMvc mvc;
+  @Autowired private MockMvc mvc;
 
-  @Autowired
-  private ObjectMapper mapper;
+  @Autowired private ObjectMapper mapper;
 
   @TestConfiguration
   static class TestBeans {
@@ -62,13 +60,14 @@ public class ExceptionIntegrationTest {
 
     String invalidJson = "{ \"tradeId\": \"T-X\" }";
 
-    var result = mvc.perform(
-        post("/trades")
-            .contentType(MediaType.APPLICATION_JSON)
-            .header("Authorization", "Bearer test-token")
-            .content(invalidJson))
-        .andExpect(status().isBadRequest())
-        .andReturn();
+    var result =
+        mvc.perform(
+                post("/trades")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Authorization", "Bearer test-token")
+                    .content(invalidJson))
+            .andExpect(status().isBadRequest())
+            .andReturn();
 
     String content = result.getResponse().getContentAsString();
     var node = mapper.readTree(content);
@@ -83,8 +82,9 @@ public class ExceptionIntegrationTest {
     assertTrue(node.has("timestamp"));
     String ts = node.get("timestamp").asText();
     // ISO_OFFSET_DATE_TIME with exactly 3 fractional digits
-    java.util.regex.Pattern p = java.util.regex.Pattern.compile(
-        "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[+-]\\d{2}:\\d{2})$");
+    java.util.regex.Pattern p =
+        java.util.regex.Pattern.compile(
+            "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(?:Z|[+-]\\d{2}:\\d{2})$");
     assertTrue(
         p.matcher(ts).matches(),
         "timestamp must be ISO_OFFSET_DATE_TIME with exactly 3 fractional digits: " + ts);

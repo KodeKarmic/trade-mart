@@ -7,7 +7,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-
 import net.jqwik.api.Arbitraries;
 import net.jqwik.api.Arbitrary;
 import net.jqwik.api.ForAll;
@@ -16,7 +15,8 @@ import net.jqwik.api.Provide;
 
 public class TradeValidationPropertyTest {
 
-  private static final Clock FIXED_CLOCK = Clock.fixed(Instant.parse("2025-10-27T00:00:00Z"), ZoneOffset.UTC);
+  private static final Clock FIXED_CLOCK =
+      Clock.fixed(Instant.parse("2025-10-27T00:00:00Z"), ZoneOffset.UTC);
 
   // Restrict the version domain to avoid jqwik mixing many extreme edge-cases
   // together.

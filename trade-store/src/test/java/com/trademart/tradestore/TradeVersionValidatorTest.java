@@ -3,8 +3,8 @@ package com.trademart.tradestore;
 import static org.assertj.core.api.Assertions.assertThatNoException;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.model.TradeDto;
+import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.service.impl.SimpleTradeVersionValidator;
 import org.junit.jupiter.api.Test;
 

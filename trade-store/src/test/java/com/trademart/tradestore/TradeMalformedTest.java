@@ -6,8 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.config.ExceptionConfig;
+import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.service.TradeService;
 import org.hamcrest.Matchers;
 import org.junit.jupiter.api.Test;
@@ -20,20 +20,17 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Unit tests for malformed trade data validation. Tests various scenarios of
- * invalid input data to
+ * Unit tests for malformed trade data validation. Tests various scenarios of invalid input data to
  * ensure proper validation error messages are returned.
  */
 @WebMvcTest(controllers = com.trademart.tradestore.streaming.TradeIngestionController.class)
 @AutoConfigureMockMvc(addFilters = false)
-@Import({ ExceptionConfig.class, TradeMalformedTest.TestConfig.class })
+@Import({ExceptionConfig.class, TradeMalformedTest.TestConfig.class})
 public class TradeMalformedTest {
 
-  @Autowired
-  private MockMvc mvc;
+  @Autowired private MockMvc mvc;
 
-  @MockBean
-  private TradeService tradeService;
+  @MockBean private TradeService tradeService;
 
   @org.springframework.boot.test.context.TestConfiguration
   static class TestConfig {
@@ -63,7 +60,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenMissingTradeId_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "version": 1,
           "maturityDate": "2025-12-31",
@@ -80,7 +78,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenMissingMaturityDate_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -97,7 +96,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenMissingPrice_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -114,7 +114,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenInvalidDateFormat_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -130,7 +131,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenInvalidDateValue_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -146,7 +148,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenInvalidPriceFormat_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -162,7 +165,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenNegativeVersion_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": -1,
@@ -180,7 +184,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenNullTradeId_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": null,
           "version": 1,
@@ -196,7 +201,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenNullMaturityDate_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -212,7 +218,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenNullPrice_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -228,7 +235,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenInvalidJsonSyntax_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -252,7 +260,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenInvalidContentType_thenReturns415() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -269,7 +278,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenVersionIsDecimal_thenReturns400() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1.5,
@@ -291,7 +301,8 @@ public class TradeMalformedTest {
     given(tradeService.createOrUpdateTrade(any())).willReturn(saved);
 
     // Spring Boot typically ignores unknown fields by default
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -314,7 +325,8 @@ public class TradeMalformedTest {
 
     // Zero is valid per @PositiveOrZero constraint (not on price, but testing
     // edge case)
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 0,
@@ -336,7 +348,8 @@ public class TradeMalformedTest {
 
     // Note: Business rule validation (maturity in past) happens in service layer
     // Controller validation only checks data format/presence
-    String json = """
+    String json =
+        """
         {
           "tradeId": "T-123",
           "version": 1,
@@ -351,7 +364,8 @@ public class TradeMalformedTest {
 
   @Test
   public void whenMultipleValidationErrors_allErrorsReturned() throws Exception {
-    String json = """
+    String json =
+        """
         {
           "tradeId": null,
           "version": -5,
