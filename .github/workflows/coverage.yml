@@ -55,15 +55,17 @@ jobs:
       - name: Prepare optional-steps environment
         run: |
           # set simple env flags so we don't use 'secrets' inside workflow 'if' expressions
-          if [ -n "${{ secrets.SONAR_TOKEN }}" ]; then echo "SONAR_ENABLED=true" >> $GITHUB_ENV; fi
+          # require both token and host so we don't attempt Sonar analysis without a server URL
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ] && [ -n "${{ secrets.SONAR_HOST_URL }}" ]; then echo "SONAR_ENABLED=true" >> $GITHUB_ENV; fi
 
 
-      - name: Run SonarQube analysis (optional)
+      - name: Run Sonar analysis (optional)
         if: env.SONAR_ENABLED == 'true'
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
           SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
         run: |
-          echo "Running SonarQube analysis using aggregated JaCoCo report"
-          ./gradlew sonarqube -Dsonar.login=${SONAR_TOKEN} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.projectKey=${SONAR_PROJECT_KEY} --no-daemon --console=plain
+          echo "Running Sonar analysis using aggregated JaCoCo report"
+          # `sonarqube` Gradle task is deprecated; use `sonar` instead
+          ./gradlew sonar -Dsonar.login=${SONAR_TOKEN} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.projectKey=${SONAR_PROJECT_KEY} --no-daemon --console=plain

@@ -23,8 +23,8 @@ buildscript {
 // environments may not apply the plugin at the root project which would otherwise
 // cause configuration-time failures.
 pluginManager.withPlugin('org.sonarqube') {
-    // ensure sonarqube task runs after the jacoco aggregation
-    tasks.named('sonarqube') {
+    // ensure sonar task runs after the jacoco aggregation
+    tasks.named('sonar') {
         dependsOn 'jacocoRootReport'
     }
 
@@ -41,7 +41,7 @@ pluginManager.withPlugin('org.sonarqube') {
                 sonarExt.properties.put('sonar.coverage.jacoco.xmlReportPaths', xmlFiles.join(','))
                 logger.lifecycle("Configured Sonar JaCoCo XML report paths: ${xmlFiles}")
             } else {
-                logger.warn('No JaCoCo XML reports found under **/build/reports/jacoco/**/*.xml. Ensure jacocoTestReport runs before sonarqube.')
+                logger.warn('No JaCoCo XML reports found under **/build/reports/jacoco/**/*.xml. Ensure jacocoTestReport runs before sonar.')
             }
         } else {
             logger.warn('Sonar extension not found in project; skipping Sonar jacoco XML configuration')
@@ -158,13 +158,21 @@ tasks.register('jacocoRootReport', org.gradle.testing.jacoco.tasks.JacocoReport)
 sonarqube {
     properties {
         // Default project key; you can override via environment or CI variables
-        property "sonar.projectKey", System.getenv('SONAR_PROJECT_KEY') ?: 'KodeKarmic:trade-mart'
+        property "sonar.projectKey", System.getenv('SONAR_PROJECT_KEY') ?: 'KodeKarmic_trade-mart'
         // Sonar host and token should be provided via environment secrets in CI
         property "sonar.host.url", System.getenv('SONAR_HOST_URL') ?: 'https://sonarcloud.io'
         property "sonar.login", System.getenv('SONAR_TOKEN') ?: ''
+        property "sonar.organization", "kodekarmic"
 
         // Static property placeholders — dynamic Jacoco XML paths are configured after project
         // evaluation (see below) so we avoid calling task lifecycle methods from inside the
         // Sonar Properties DSL which doesn't support doLast/doFirst.
     }
+}
+
+sonar {
+  properties {
+    property "sonar.projectKey", "KodeKarmic_trade-mart"
+    property "sonar.organization", "kodekarmic"
+  }
 }
