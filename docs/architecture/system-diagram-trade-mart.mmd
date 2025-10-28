@@ -1,26 +1,89 @@
-
 flowchart LR
- Client(("Client")) -- HTTPS POST trades Bearer JWT --> Gateway
- subgraph K8S["Kubernetes Cluster"]
-    direction TB
-        Gateway{{"Ingress / API Gateway"}}
-        TradeStore("trade-store")
-        TradeExpiry("trade-expiry")
-        TradeRepair("trade-repair")
-        KEDA["KEDA (autoscaler)"]
-        Kafka[("Kafka Cluster")]
-        OTEL["OpenTelemetry Collector"]
-        Prometheus["Prometheus + ServiceMonitor"]
+ subgraph CLIENTS["👥 Client Sources"]
+        C1["Client A – REST/FIX"]
+        C2["Client B – Batch Upload"]
+        C3["Client C – Streaming Feed"]
   end
-    
-    Gateway -- forward --> TradeStore
-    Gateway -- validate token JWKS --> OIDC["OIDC Identity Provider"]
-    TradeStore -- publish event --> Kafka
-    Kafka -- "consume trade.* topics" --> TradeStore
-    KEDA -- optionally scale --> TradeStore
-    TradeExpiry -- publish --> Kafka
-    TradeRepair -- publish --> Kafka
-    Prometheus -- scrape --> K8S
-    TradeStore -- logs --> ELK["Logging / ELK (optional)"]
-    Note1[["Notes:\n- Service-side JWT validation (JWKS)\n- Topics (examples): trade.ingested, trade.expired, trade.audit\n- Error payloads persisted to errors/ with retention policy"]] -.-> TradeStore
-    classDef note fill:#f9f,stroke:#333,stroke-width:1px
+ subgraph INGESTION["🧭 Ingestion Layer"]
+        GW["API Gateway – Auth, Rate Limit, Routing"]
+        INJ["Ingestion Service – Schema Validation & Normalization"]
+  end
+ subgraph PIPELINE["🌀 Kafka Streaming Layer"]
+        RAW["<b>☕ Kafka Topic:</b> trades-raw"]
+        VALID["<b>☕ Kafka Topic:</b> valid-trades"]
+        REJ["<b>☕ Kafka Topic:</b> rejections"]
+        EXP["<b>☕ Kafka Topic:</b> expiry-events"]
+        REPAIR["<b>☕ Kafka Topic:</b> repair-commands"]
+  end
+ subgraph PROCESSING["⚙️ Stream Processing"]
+        SP["Stream Processor – Version Gating, Enrichment, Expiry Detection"]
+  end
+ subgraph DATABASES["💾 Persistence Layer"]
+        PG["<b>🐘 PostgreSQL</b><br>Authoritative Store"]
+        MONGO["<b>🍃 MongoDB</b><br>Serving Store for Scalable Reads"]
+  end
+ subgraph QUERY["🔍 Query & Analytics"]
+        APIQ["Trade Query API – Read from MongoDB or PostgreSQL"]
+        BI["BI / Analytics – Read from PostgreSQL"]
+  end
+ subgraph OPS["🛠️ Ops & Repair"]
+        REPAIR_UI["Repair Console – Human Review Interface"]
+        REPAIR_SVC["Repair Service – Emits Repair Commands"]
+  end
+ subgraph EVENTS["📡 System Events / Outputs"]
+        OUT_VALID["✅ Valid Trades – Accepted, Latest Versions Only"]
+        OUT_REJ["❌ Rejected Trades – Older Versions or Invalid Schema"]
+        OUT_EXP["⏳ Expired Trades – Maturity or Cancellation"]
+        OUT_REPAIR["🔧 Repair Events – Manual or Automated Fix"]
+  end
+ subgraph OBSERVABILITY["📈 Observability & Scaling"]
+        MET["Metrics & Tracing – Prometheus, Grafana, OpenTelemetry"]
+        K8S["Kubernetes HPA – Autoscale on CPU, Kafka Lag, DB Latency"]
+  end
+    C1 --> GW
+    C2 --> GW
+    C3 --> GW
+    GW --> INJ
+    INJ --> RAW
+    RAW --> SP
+    SP --> VALID & REJ & EXP & MET
+    VALID --> WRPG["Postgres Writer – Upsert (Version Check)"] & WRMG["Mongo Writer – Denormalized Views"] & OUT_VALID
+    WRPG --> PG & MET
+    WRMG --> MONGO & MET
+    EXP --> WRPG & WRMG & OUT_EXP
+    APIQ --> PG & MONGO
+    BI --> PG
+    REPAIR_UI --> REPAIR_SVC
+    REPAIR_SVC --> REPAIR
+    REPAIR --> SP & OUT_REPAIR
+    REJ --> OUT_REJ
+    MET --> K8S
+
+     C1:::rounded
+     C2:::rounded
+     C3:::rounded
+     GW:::rounded
+     INJ:::rounded
+     RAW:::rounded
+     VALID:::rounded
+     REJ:::rounded
+     EXP:::rounded
+     REPAIR:::rounded
+     SP:::rounded
+     PG:::rounded
+     MONGO:::rounded
+     APIQ:::rounded
+     BI:::rounded
+     REPAIR_UI:::rounded
+     REPAIR_SVC:::rounded
+     OUT_VALID:::rounded
+     OUT_REJ:::rounded
+     OUT_EXP:::rounded
+     OUT_REPAIR:::rounded
+     MET:::rounded
+     K8S:::rounded
+     WRPG:::rounded
+     WRMG:::rounded
+    classDef rounded stroke:#333,stroke-width:1px,rx:10,ry:10,fill:#f9f9f9
+
+
