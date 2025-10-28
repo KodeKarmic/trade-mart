@@ -52,7 +52,7 @@ jobs:
           retention-days: 7
 
       - name: Upload aggregated coverage to Codecov (optional)
-        if: secrets.CODECOV_TOKEN != ''
+        if: ${{ secrets.CODECOV_TOKEN != '' }}
         uses: codecov/codecov-action@v4
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -60,7 +60,7 @@ jobs:
           fail_ci_if_error: true
 
       - name: Run SonarQube analysis (optional)
-        if: secrets.SONAR_TOKEN != ''
+        if: ${{ secrets.SONAR_TOKEN != '' }}
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
