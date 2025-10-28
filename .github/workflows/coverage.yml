@@ -51,14 +51,6 @@ jobs:
           path: build/reports/jacoco/jacocoRootReport.xml
           retention-days: 7
 
-      - name: Upload aggregated coverage to Codecov (optional)
-        if: ${{ secrets.CODECOV_TOKEN != null && secrets.CODECOV_TOKEN != '' }}
-        uses: codecov/codecov-action@v4
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: build/reports/jacoco/jacocoRootReport.xml
-          fail_ci_if_error: true
-
       - name: Run SonarQube analysis (optional)
         if: ${{ secrets.SONAR_TOKEN != null && secrets.SONAR_TOKEN != '' }}
         env:
