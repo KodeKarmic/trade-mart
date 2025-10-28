@@ -90,12 +90,12 @@ public class TradeServiceImplTest {
     dto.setPrice(new BigDecimal("200.00"));
     dto.setMaturityDate(LocalDate.parse("2025-12-31"));
 
-  // stub the version validator to throw for the lower-version incoming trade
-  org.mockito.Mockito.doThrow(new TradeRejectedException("incoming version is lower than existing"))
-    .when(versionValidator)
-    .validate(any(), any());
+    // stub the version validator to throw for the lower-version incoming trade
+    org.mockito.Mockito.doThrow(new TradeRejectedException("incoming version is lower than existing"))
+        .when(versionValidator)
+        .validate(any(), any());
 
-  assertThrows(TradeRejectedException.class, () -> subject.createOrUpdateTrade(dto));
+    assertThrows(TradeRejectedException.class, () -> subject.createOrUpdateTrade(dto));
 
     // ensure no DB upsert or history writes were attempted for rejected trades
     verify(tradeRepository, never()).upsertTrade(any(), any(), any(), any(), any(), any(), any());
