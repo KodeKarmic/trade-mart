@@ -2,7 +2,7 @@ package com.trademart.tradestore;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.trademart.tradeexpiry.repository.TradeRepository;
+import com.trademart.tradestore.repository.TradeRepository;
 import java.time.Duration;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -25,26 +25,25 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @Import({
-  com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class,
-  com.trademart.tradestore.testconfig.PrometheusActuatorBridge.class,
-  com.trademart.tradestore.testconfig.TestPrometheusRegistryConfig.class
+    com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class,
+    com.trademart.tradestore.testconfig.PrometheusActuatorBridge.class,
+    com.trademart.tradestore.testconfig.TestPrometheusRegistryConfig.class,
+    com.trademart.tradestore.testconfig.TestExpiryConfig.class
 })
 @Testcontainers
 @Tag("integration")
 public class TradeMetricsIT {
 
   @Container
-  static PostgreSQLContainer<?> postgres =
-      new PostgreSQLContainer<>("postgres:15-alpine")
-          .withDatabaseName("test")
-          .withUsername("test")
-          .withPassword("test");
+  static PostgreSQLContainer<?> postgres = new PostgreSQLContainer<>("postgres:15-alpine")
+      .withDatabaseName("test")
+      .withUsername("test")
+      .withPassword("test");
 
   @Container
-  static MongoDBContainer mongo =
-      new MongoDBContainer("mongo:6.0.8")
-          .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
-          .withStartupTimeout(Duration.ofSeconds(120));
+  static MongoDBContainer mongo = new MongoDBContainer("mongo:6.0.8")
+      .waitingFor(Wait.forLogMessage(".*waiting for connections.*\\n", 1))
+      .withStartupTimeout(Duration.ofSeconds(120));
 
   @DynamicPropertySource
   static void properties(DynamicPropertyRegistry registry) {
@@ -57,11 +56,14 @@ public class TradeMetricsIT {
     registry.add("trademart.expiry.enabled", () -> "false");
   }
 
-  @LocalServerPort int port;
+  @LocalServerPort
+  int port;
 
-  @Autowired TestRestTemplate restTemplate;
+  @Autowired
+  TestRestTemplate restTemplate;
 
-  @Autowired TradeRepository tradeRepository;
+  @Autowired
+  TradeRepository tradeRepository;
 
   @Autowired(required = false)
   io.micrometer.prometheus.PrometheusMeterRegistry prometheusRegistry;
@@ -71,20 +73,18 @@ public class TradeMetricsIT {
     String base = "http://localhost:" + port;
     String url = base + "/trades";
 
-    String body =
-        "{"
-            + "\"tradeId\": \"MET-1\","
-            + "\"version\": 1,"
-            + "\"maturityDate\": \"2030-01-01\","
-            + "\"price\": 10.0"
-            + "}";
+    String body = "{"
+        + "\"tradeId\": \"MET-1\","
+        + "\"version\": 1,"
+        + "\"maturityDate\": \"2030-01-01\","
+        + "\"price\": 10.0"
+        + "}";
 
     HttpHeaders headers = new HttpHeaders();
     headers.setContentType(MediaType.APPLICATION_JSON);
     headers.setBearerAuth("valid-token");
 
-    ResponseEntity<String> r =
-        restTemplate.postForEntity(url, new HttpEntity<>(body, headers), String.class);
+    ResponseEntity<String> r = restTemplate.postForEntity(url, new HttpEntity<>(body, headers), String.class);
     assertThat(r.getStatusCode().is2xxSuccessful()).isTrue();
 
     // Prefer reading the value directly from the Prometheus registry if available
@@ -95,8 +95,7 @@ public class TradeMetricsIT {
     } else {
       // Fallback: attempt to scrape the actuator endpoint but don't fail the test
       // if the scraping format differs; log the body for debugging.
-      ResponseEntity<String> prom =
-          restTemplate.getForEntity(base + "/actuator/prometheus", String.class);
+      ResponseEntity<String> prom = restTemplate.getForEntity(base + "/actuator/prometheus", String.class);
       if (prom.getStatusCode().is2xxSuccessful()) {
         String text = prom.getBody();
         System.out.println(

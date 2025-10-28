@@ -6,7 +6,8 @@ import java.time.ZonedDateTime;
 import org.springframework.stereotype.Service;
 
 /**
- * Basic validation rules for incoming trades. This is an example of typed exceptions and how to use
+ * Basic validation rules for incoming trades. This is an example of typed
+ * exceptions and how to use
  * them in the codebase.
  */
 @Service
@@ -29,7 +30,8 @@ public class TradeValidationService {
       ZonedDateTime nowUtc = ZonedDateTime.ofInstant(clockService.nowUtc(), ZoneId.of("UTC"));
       java.time.LocalDate todayUtc = nowUtc.toLocalDate();
       if (maturityDate.isBefore(todayUtc)) {
-        throw new TradeValidationException("maturityDate must not be in the past");
+        // Message intentionally matches integration test and expiry module wording
+        throw new TradeValidationException("maturity date is in the past");
       }
     }
   }
