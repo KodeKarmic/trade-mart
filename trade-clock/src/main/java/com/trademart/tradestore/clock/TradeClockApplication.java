@@ -1,13 +1,11 @@
-package com.trademart.tradestore.expiry;
+package com.trademart.tradestore.clock;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(scanBasePackages = "com.trademart.tradestore")
-@EnableScheduling
-public class TradeExpiryApplication {
+public class TradeClockApplication {
   public static void main(String[] args) {
-    SpringApplication.run(TradeExpiryApplication.class, args);
+    SpringApplication.run(TradeClockApplication.class, args);
   }
 }

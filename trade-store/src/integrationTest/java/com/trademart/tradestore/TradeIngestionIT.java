@@ -34,7 +34,7 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(TestJwtDecoderConfig.class)
+@Import({TestJwtDecoderConfig.class, com.trademart.tradestore.testconfig.TestExpiryConfig.class})
 @Testcontainers
 @Tag("integration")
 public class TradeIngestionIT {

@@ -6,18 +6,33 @@
  * This project uses @Incubating APIs which are subject to change.
  */
 
+pluginManagement {
+    repositories {
+        // Plugin portal is required for community plugins such as org.sonarqube
+        gradlePluginPortal()
+        mavenCentral()
+        google()
+    }
+}
+
 plugins {
     // Apply the foojay-resolver plugin to allow automatic download of JDKs
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
 
 rootProject.name = 'trade-mart'
-include('app')
-// Include the trade-store subproject so root builds can reference it
 include('trade-store')
-// New standalone lifecycle / expiry module
 include('trade-expiry')
 include('trade-clock')
 include('trade-common')
-// Repair module to fix failed validation trades and resubmit
 include('trade-repair')
+
+// Ensure project dependency resolution includes common public repositories so
+// plugins and dependencies (JaCoCo, Gradle plugins, etc.) can be resolved.
+dependencyResolutionManagement {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+        google()
+    }
+}

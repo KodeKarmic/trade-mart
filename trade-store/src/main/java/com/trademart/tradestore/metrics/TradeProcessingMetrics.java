@@ -7,11 +7,9 @@ import io.micrometer.core.instrument.binder.MeterBinder;
 import org.springframework.stereotype.Component;
 
 /**
- * Binds an application-level gauge exposing the number of in-flight/pending
- * trade messages.
- * This metric can be consumed by an autoscaler (KEDA or a Custom Metrics HPA)
- * to scale replicas
- * up when there is backlog and down when backlog is 0.
+ * Binds an application-level gauge exposing the number of in-flight/pending trade messages. This
+ * metric can be consumed by an autoscaler (KEDA or a Custom Metrics HPA) to scale replicas up when
+ * there is backlog and down when backlog is 0.
  */
 @Component
 public class TradeProcessingMetrics implements MeterBinder {

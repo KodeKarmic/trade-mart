@@ -1,4 +1,4 @@
-package com.trademart.tradestore.model;
+package com.trademart.tradeexpiry.model;
 
 public enum TradeStatus {
   ACTIVE,

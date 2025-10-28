@@ -80,9 +80,10 @@ public class ExceptionConfig {
   @ExceptionHandler(MethodArgumentNotValidException.class)
   public ResponseEntity<Object> handleMethodArgNotValid(
       MethodArgumentNotValidException ex, HttpServletRequest request) {
-    var errors = ex.getBindingResult().getFieldErrors().stream()
-        .map(f -> java.util.Map.of("field", f.getField(), "message", f.getDefaultMessage()))
-        .collect(Collectors.toList());
+    var errors =
+        ex.getBindingResult().getFieldErrors().stream()
+            .map(f -> java.util.Map.of("field", f.getField(), "message", f.getDefaultMessage()))
+            .collect(Collectors.toList());
 
     // Build response map allowing nulls for optional fields (traceId)
     Map<String, Object> body = new LinkedHashMap<>();

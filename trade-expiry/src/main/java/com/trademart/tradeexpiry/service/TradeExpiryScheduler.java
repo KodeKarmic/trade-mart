@@ -1,4 +1,4 @@
-package com.trademart.tradestore.service;
+package com.trademart.tradeexpiry.service;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;

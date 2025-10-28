@@ -1,0 +1,71 @@
+name: code-coverage
+
+on:
+  push:
+    branches: [ main, master, init ]
+  pull_request:
+    branches: [ main, master, init ]
+
+jobs:
+  coverage:
+    name: Run tests and publish coverage
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/*.gradle*','**/gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            ${{ runner.os }}-gradle-
+
+      - name: Run aggregated JaCoCo report (root)
+        run: |
+          ./gradlew clean jacocoRootReport --no-daemon --console=plain
+
+      - name: Upload aggregated JaCoCo HTML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-root-html-report
+          path: build/reports/jacoco/html/**
+          retention-days: 7
+
+      - name: Upload aggregated JaCoCo XML report
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-root-xml
+          path: build/reports/jacoco/jacocoRootReport.xml
+          retention-days: 7
+
+      - name: Prepare optional-steps environment
+        run: |
+          # set simple env flags so we don't use 'secrets' inside workflow 'if' expressions
+          # require both token and host so we don't attempt Sonar analysis without a server URL
+          if [ -n "${{ secrets.SONAR_TOKEN }}" ] && [ -n "${{ secrets.SONAR_HOST_URL }}" ]; then echo "SONAR_ENABLED=true" >> $GITHUB_ENV; fi
+
+
+      - name: Run Sonar analysis (optional)
+        if: env.SONAR_ENABLED == 'true'
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          SONAR_PROJECT_KEY: ${{ secrets.SONAR_PROJECT_KEY }}
+        run: |
+          echo "Running Sonar analysis using aggregated JaCoCo report"
+          # `sonarqube` Gradle task is deprecated; use `sonar` instead
+          ./gradlew sonar -Dsonar.login=${SONAR_TOKEN} -Dsonar.host.url=${SONAR_HOST_URL} -Dsonar.projectKey=${SONAR_PROJECT_KEY} --no-daemon --console=plain

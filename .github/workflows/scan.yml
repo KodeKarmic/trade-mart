@@ -2,9 +2,9 @@ name: repo-scan
 
 on:
   push:
-    branches: [ main, master, '002-trade-store-validation' ]
+    branches: [ main, master, init ]
   pull_request:
-    branches: [ main, master ]
+    branches: [ main, master, init ]
 
 jobs:
   scan:
@@ -21,34 +21,29 @@ jobs:
           distribution: temurin
           java-version: '17'
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
-        with:
-          node-version: '20'
-
-      - name: Cache node modules
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
-
       - name: Install markdownlint-cli
         run: |
-          npm ci --no-audit --no-fund || npm install -g markdownlint-cli@0.33.0
+          sudo apt-get update
+          sudo apt-get install -y jq unzip
 
-      - name: Run markdownlint
+      - name: OWASP Dependency-Check (CLI)
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: |
-          echo "Running markdownlint"
-          npx markdownlint "**/*.md" --config .markdownlint.json || true
-
-      - name: OWASP Dependency-Check
-        uses: dependency-check/dependency-check-action@v2
-        with:
-          project: trade-mart
-          format: 'SARIF'
-          scan: '.'
+          echo "Fetching latest Dependency-Check release info..."
+          ASSET_URL=$(curl -s https://api.github.com/repos/jeremylong/DependencyCheck/releases/latest \
+            | jq -r '.assets[] | select(.name | test("dependency-check-.*-release.zip")) | .browser_download_url' \
+            | head -n1)
+          if [ -z "${ASSET_URL}" ]; then
+            echo "Unable to find a Dependency-Check release asset via GitHub API" >&2
+            exit 1
+          fi
+          echo "Downloading $ASSET_URL"
+          curl -L -o dependency-check.zip "$ASSET_URL"
+          unzip -q dependency-check.zip -d dependency-check
+          chmod +x dependency-check/dependency-check/bin/dependency-check.sh
+          echo "Running dependency-check (this may take a while)..."
+          ./dependency-check/dependency-check/bin/dependency-check.sh --project "trade-mart" --scan . --format SARIF --out . --nvdApiKey "$NVD_API_KEY"
 
       - name: Upload dependency-check SARIF
         uses: github/codeql-action/upload-sarif@v2

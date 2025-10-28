@@ -1,6 +1,7 @@
 package com.trademart.tradestore.repository;
 
 import com.trademart.tradestore.model.TradeEntity;
+import com.trademart.tradestore.model.TradeStatus;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -12,6 +13,6 @@ public interface TradeRepository extends JpaRepository<TradeEntity, Long>, Trade
   Integer findMaxVersionByTradeId(
       @org.springframework.data.repository.query.Param("tradeId") String tradeId);
 
-  java.util.List<com.trademart.tradestore.model.TradeEntity> findByStatusAndMaturityDateBefore(
-      com.trademart.tradestore.model.TradeStatus status, java.time.LocalDate date);
+  java.util.List<TradeEntity> findByStatusAndMaturityDateBefore(
+      TradeStatus status, java.time.LocalDate date);
 }

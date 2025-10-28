@@ -24,3 +24,12 @@ dependencies {
 tasks.named('test') {
     useJUnitPlatform()
 }
+
+// This module is intended to provide a Clock service to other modules. Disable building
+// an executable Spring Boot jar and produce a normal library jar instead.
+tasks.named('bootJar').configure {
+    enabled = false
+}
+tasks.named('jar').configure {
+    enabled = true
+}

@@ -1,6 +1,6 @@
 package com.trademart.tradestore.streaming;
 
-import com.trademart.tradestore.repository.TradeRepository;
+import com.trademart.tradeexpiry.repository.TradeRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -18,8 +18,8 @@ public class TradeQueryController {
   }
 
   /**
-   * Return the current max version for a given tradeId.
-   * Returns 204 No Content when no versions exist yet for that tradeId.
+   * Return the current max version for a given tradeId. Returns 204 No Content when no versions
+   * exist yet for that tradeId.
    */
   @GetMapping("/{tradeId}/max-version")
   public ResponseEntity<Integer> maxVersion(@PathVariable String tradeId) {

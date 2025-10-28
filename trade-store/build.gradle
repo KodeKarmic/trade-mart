@@ -212,3 +212,7 @@ tasks.register('buildBatchImage', Exec) {
     // docker must be available on the PATH for this to succeed
     commandLine 'docker', 'build', '-t', 'trade-store-batch:latest', '-f', 'worker.Dockerfile', '.'
 }
+
+bootJar {
+    mainClass.set("com.trademart.tradestore.TradeStoreApplication")
+}

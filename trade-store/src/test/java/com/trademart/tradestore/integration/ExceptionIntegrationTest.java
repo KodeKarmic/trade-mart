@@ -5,6 +5,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.trademart.tradeexpiry.repository.TradeRepository;
+import com.trademart.tradeexpiry.service.TradeMaturityValidator;
 import com.trademart.tradestore.service.TradeService;
 import java.util.UUID;
 import org.junit.jupiter.api.Test;
@@ -33,6 +35,20 @@ public class ExceptionIntegrationTest {
       // validation errors occur before the service is invoked, so a simple mock is
       // sufficient
       return Mockito.mock(TradeService.class);
+    }
+
+    @Bean
+    public TradeMaturityValidator tradeMaturityValidator() {
+      // provide a mock for cross-module validator so the ApplicationContext
+      // can start without scanning trade-expiry implementation beans
+      return Mockito.mock(TradeMaturityValidator.class);
+    }
+
+    @Bean
+    public TradeRepository tradeExpiryRepository() {
+      // mock the external repository required by some controllers
+      // name the bean differently to avoid colliding with local JPA repository
+      return Mockito.mock(TradeRepository.class);
     }
   }
 

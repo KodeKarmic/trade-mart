@@ -27,7 +27,8 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 @Import({
   com.trademart.tradestore.testconfig.TestJwtDecoderConfig.class,
   com.trademart.tradestore.testconfig.PrometheusActuatorBridge.class,
-  com.trademart.tradestore.testconfig.TestPrometheusRegistryConfig.class
+  com.trademart.tradestore.testconfig.TestPrometheusRegistryConfig.class,
+  com.trademart.tradestore.testconfig.TestExpiryConfig.class
 })
 @Testcontainers
 @Tag("integration")

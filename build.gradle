@@ -1,0 +1,178 @@
+// Root Gradle build to configure SonarQube integration and point Sonar to JaCoCo XML reports
+
+// Use the SonarQube Gradle plugin via buildscript classpath to improve
+// repository resolution across environments. If this artifact cannot be
+// resolved, CI can run the standalone sonar-scanner CLI instead.
+buildscript {
+    repositories {
+        mavenCentral()
+        gradlePluginPortal()
+    }
+    dependencies {
+        // Use a stable sonarqube Gradle plugin version. If this fails in your
+        // environment, we can switch to the CLI approach in CI instead.
+        classpath 'org.sonarsource.scanner.gradle:sonarqube-gradle-plugin:4.3.0.3225'
+    }
+}
+
+// Ensure the SonarQube task runs after the aggregated JaCoCo report and configure the
+// discovered XML report paths at execution time. We avoid calling doLast inside the
+// Sonar properties DSL because the SonarProperties object doesn't support task
+// lifecycle methods.
+// Only configure Sonar task/extension if the Sonar plugin is actually present. Some
+// environments may not apply the plugin at the root project which would otherwise
+// cause configuration-time failures.
+pluginManager.withPlugin('org.sonarqube') {
+    // ensure sonar task runs after the jacoco aggregation
+    tasks.named('sonar') {
+        dependsOn 'jacocoRootReport'
+    }
+
+    // After evaluation discover jacoco XML paths and register them with Sonar
+    afterEvaluate {
+        def sonarExt = project.extensions.findByName('sonarqube')
+        if (sonarExt != null) {
+            def xmlFiles = fileTree(dir: rootDir, include: ['**/build/reports/jacoco/**/*.xml']).files.collect { it.path }
+            if (xmlFiles) {
+                // The Sonar extension exposes a properties map when configured via the
+                // plugin in some Gradle versions. Use put() on the map to avoid calling
+                // a non-existent property() method on a LinkedHashMap which causes a
+                // MissingMethodException during configuration.
+                sonarExt.properties.put('sonar.coverage.jacoco.xmlReportPaths', xmlFiles.join(','))
+                logger.lifecycle("Configured Sonar JaCoCo XML report paths: ${xmlFiles}")
+            } else {
+                logger.warn('No JaCoCo XML reports found under **/build/reports/jacoco/**/*.xml. Ensure jacocoTestReport runs before sonar.')
+            }
+        } else {
+            logger.warn('Sonar extension not found in project; skipping Sonar jacoco XML configuration')
+        }
+    }
+}
+
+apply plugin: 'org.sonarqube'
+
+// Add a root-level JaCoCo aggregation task that collects execution data and class/source
+// directories from subprojects and emits a combined XML and HTML report.
+apply plugin: 'jacoco'
+
+// Apply JaCoCo to subprojects and ensure each module emits a jacoco XML report for Sonar/Codecov
+subprojects {
+    // Only add JaCoCo to subprojects that look like Java/Kotlin modules (have src/main/java or kotlin)
+    if (file("${projectDir}/src/main/java").exists() || file("${projectDir}/src/main/kotlin").exists()) {
+        apply plugin: 'jacoco'
+
+        // Ensure tests produce JaCoCo execution data and then generate a report
+        tasks.withType(Test).configureEach {
+            // After tests run, generate the module-level jacocoTestReport
+            finalizedBy('jacocoTestReport')
+        }
+
+        // Register a jacocoTestReport task per subproject if not present
+        afterEvaluate { proj ->
+            if (!proj.tasks.findByName('jacocoTestReport')) {
+                proj.tasks.register('jacocoTestReport', org.gradle.testing.jacoco.tasks.JacocoReport) {
+                    dependsOn proj.tasks.withType(Test)
+
+                    executionData = proj.fileTree(dir: proj.buildDir, include: ['jacoco/*.exec', '**/jacoco/*.exec', '**/*.exec'])
+
+                    classDirectories.setFrom(proj.files(proj.sourceSets.main.output))
+                    sourceDirectories.setFrom(proj.files(proj.sourceSets.main.allSource.srcDirs))
+
+                    reports {
+                        xml.required = true
+                        xml.outputLocation = proj.file("${proj.buildDir}/reports/jacoco/jacocoTestReport.xml")
+                        html.required = true
+                        html.outputLocation = proj.file("${proj.buildDir}/reports/jacoco/html")
+                    }
+                }
+            }
+        }
+    }
+}
+
+tasks.register('jacocoRootReport', org.gradle.testing.jacoco.tasks.JacocoReport) {
+    group = 'verification'
+    description = 'Aggregate JaCoCo reports from all subprojects and produce a combined XML/HTML report.'
+
+    // Ensure subproject tests / jacoco tasks run before aggregation
+    dependsOn = subprojects.collect { p ->
+        p.tasks.matching { it.name == 'jacocoTestReport' || it.name == 'test' }
+    }
+
+    // Execution data (.exec files) produced by JaCoCo in subprojects
+    executionData = files(subprojects.collect { p ->
+        fileTree(dir: p.buildDir, include: ['jacoco/*.exec', 'jacoco/*.exec*'])
+    })
+
+    // Collect class files from subprojects.
+    // Use the standard java/kotlin output dirs to reduce accidental duplicate class names
+    // (some classes currently exist in multiple modules which causes JaCoCo to fail when
+    // two different class files share the same fully-qualified name). We explicitly
+    // exclude the known duplicated ClockService class here. Ideally shared classes
+    // should live in a single common module (e.g. trade-common) so aggregation works
+    // without exclusions.
+    classDirectories = files(subprojects.collect { p ->
+        def dirs = []
+        def javaMain = file("${p.buildDir}/classes/java/main")
+        def kotlinMain = file("${p.buildDir}/classes/kotlin/main")
+        if (javaMain.exists()) dirs << fileTree(dir: javaMain, include: ['**/*.class'])
+        if (kotlinMain.exists()) dirs << fileTree(dir: kotlinMain, include: ['**/*.class'])
+        // If neither existed, fall back to the generic classes dir (best-effort)
+        if (dirs.isEmpty()) dirs << fileTree(dir: "${p.buildDir}/classes", include: ['**/*.class'])
+        dirs
+    }.flatten())
+
+    // Exclude known duplicate classes that are present with different bytecode in
+    // multiple modules. If you see failures here, prefer moving the duplicated
+    // source to a single shared module instead of adding more exclusions.
+    // Example: ClockService is defined in both trade-clock and trade-expiry.
+    classDirectories = files(classDirectories.files.collect { f ->
+        // apply an exclusion at the file-tree level when possible
+        if (f instanceof org.gradle.api.file.FileTree) {
+            return f.matching { exclude 'com/trademart/tradestore/service/ClockService.class' }
+        }
+        return f
+    })
+
+    // Collect source directories (java and kotlin) if present
+    sourceDirectories = files(subprojects.collect { p ->
+        def dirs = []
+        def javaDir = file("${p.projectDir}/src/main/java")
+        def kotlinDir = file("${p.projectDir}/src/main/kotlin")
+        if (javaDir.exists()) dirs << javaDir
+        if (kotlinDir.exists()) dirs << kotlinDir
+        dirs
+    }.flatten())
+
+    reports {
+        xml.required = true
+        xml.outputLocation = file("${buildDir}/reports/jacoco/jacocoRootReport.xml")
+        html.required = true
+        html.outputLocation = file("${buildDir}/reports/jacoco/html")
+    }
+}
+
+
+// Configure SonarQube properties. We discover module jacoco XML reports at runtime so
+// the configuration works for single-module and multi-module runs without hard-coding paths.
+sonarqube {
+    properties {
+        // Default project key; you can override via environment or CI variables
+        property "sonar.projectKey", System.getenv('SONAR_PROJECT_KEY') ?: 'KodeKarmic_trade-mart'
+        // Sonar host and token should be provided via environment secrets in CI
+        property "sonar.host.url", System.getenv('SONAR_HOST_URL') ?: 'https://sonarcloud.io'
+        property "sonar.login", System.getenv('SONAR_TOKEN') ?: ''
+        property "sonar.organization", "kodekarmic"
+
+        // Static property placeholders — dynamic Jacoco XML paths are configured after project
+        // evaluation (see below) so we avoid calling task lifecycle methods from inside the
+        // Sonar Properties DSL which doesn't support doLast/doFirst.
+    }
+}
+
+sonar {
+  properties {
+    property "sonar.projectKey", "KodeKarmic_trade-mart"
+    property "sonar.organization", "kodekarmic"
+  }
+}

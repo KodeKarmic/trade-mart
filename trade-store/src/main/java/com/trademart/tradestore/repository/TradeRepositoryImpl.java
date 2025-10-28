@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
@@ -17,7 +18,8 @@ public class TradeRepositoryImpl implements TradeRepositoryCustom {
 
   @PersistenceContext private EntityManager em;
 
-  public TradeRepositoryImpl(JdbcTemplate jdbcTemplate, TradeValidationService validator) {
+  public TradeRepositoryImpl(
+      @Autowired JdbcTemplate jdbcTemplate, @Autowired TradeValidationService validator) {
     this.jdbcTemplate = jdbcTemplate;
     this.validator = validator;
   }

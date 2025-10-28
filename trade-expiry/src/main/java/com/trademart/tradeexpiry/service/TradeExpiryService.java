@@ -1,10 +1,5 @@
-package com.trademart.tradestore.service;
+package com.trademart.tradeexpiry.service;
 
-import com.trademart.tradestore.model.TradeEntity;
-import com.trademart.tradestore.model.TradeStatus;
-import com.trademart.tradestore.mongo.TradeHistory;
-import com.trademart.tradestore.repository.TradeRepository;
-import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -14,6 +9,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import com.trademart.tradeexpiry.model.TradeEntity;
+import com.trademart.tradeexpiry.model.TradeStatus;
+import com.trademart.tradeexpiry.mongo.TradeHistory;
+import com.trademart.tradeexpiry.repository.TradeRepository;
+import com.trademart.tradeexpiry.repository.mongo.TradeHistoryRepository;
+import com.trademart.tradestore.service.ClockService;
 
 @Service
 public class TradeExpiryService {

@@ -1,7 +1,10 @@
 package com.trademart.tradestore.worker;
 
+import static org.mockito.Mockito.timeout;
+
 import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.service.TradeService;
+import java.util.Properties;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -14,22 +17,25 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.KafkaContainer;
-import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
-import java.util.Properties;
-
-import static org.mockito.Mockito.timeout;
 // no unused static imports
 
 @Testcontainers
-@SpringBootTest(classes = BatchWorkerApplication.class, properties = { "spring.main.web-application-type=none",
-    "spring.profiles.active=batch", "batch.exitOnComplete=false" })
+@SpringBootTest(
+    classes = BatchWorkerApplication.class,
+    properties = {
+      "spring.main.web-application-type=none",
+      "spring.profiles.active=batch",
+      "batch.exitOnComplete=false"
+    })
 class TradeWorkerIntegrationTest {
 
   @Container
-  static KafkaContainer kafka = new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
+  static KafkaContainer kafka =
+      new KafkaContainer(DockerImageName.parse("confluentinc/cp-kafka:7.5.0"));
 
   @DynamicPropertySource
   static void registerProps(DynamicPropertyRegistry registry) {
@@ -48,15 +54,20 @@ class TradeWorkerIntegrationTest {
     props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
 
     try (KafkaProducer<String, String> producer = new KafkaProducer<>(props)) {
-      producer.send(new ProducerRecord<>("test-trades-topic", "{\"tradeId\":\"T-1\",\"version\":1,\"price\":10.5}"));
-      producer.send(new ProducerRecord<>("test-trades-topic", "{\"tradeId\":\"T-2\",\"version\":1,\"price\":20.5}"));
-      producer.send(new ProducerRecord<>("test-trades-topic", "{\"tradeId\":\"T-3\",\"version\":1,\"price\":30.5}"));
+      producer.send(
+          new ProducerRecord<>(
+              "test-trades-topic", "{\"tradeId\":\"T-1\",\"version\":1,\"price\":10.5}"));
+      producer.send(
+          new ProducerRecord<>(
+              "test-trades-topic", "{\"tradeId\":\"T-2\",\"version\":1,\"price\":20.5}"));
+      producer.send(
+          new ProducerRecord<>(
+              "test-trades-topic", "{\"tradeId\":\"T-3\",\"version\":1,\"price\":30.5}"));
       producer.flush();
     }
   }
 
-  @MockBean
-  TradeService tradeService;
+  @MockBean TradeService tradeService;
 
   // context started by @SpringBootTest
 
@@ -68,6 +79,7 @@ class TradeWorkerIntegrationTest {
     // process messages.
     // Verify the TradeService#createOrUpdateTrade was called 3 times within a
     // timeout.
-    Mockito.verify(tradeService, timeout(10_000).times(3)).createOrUpdateTrade(Mockito.any(TradeDto.class));
+    Mockito.verify(tradeService, timeout(10_000).times(3))
+        .createOrUpdateTrade(Mockito.any(TradeDto.class));
   }
 }

@@ -1,11 +1,11 @@
 package com.trademart.tradestore.service.impl;
 
+import com.trademart.tradeexpiry.service.TradeMaturityValidator;
 import com.trademart.tradestore.model.TradeDto;
 import com.trademart.tradestore.model.TradeEntity;
 import com.trademart.tradestore.model.TradeStatus;
 import com.trademart.tradestore.repository.TradeRepository;
 import com.trademart.tradestore.repository.mongo.TradeHistoryRepository;
-import com.trademart.tradestore.service.TradeMaturityValidator;
 import com.trademart.tradestore.service.TradeSequencer;
 import com.trademart.tradestore.service.TradeService;
 import com.trademart.tradestore.service.TradeVersionValidator;

@@ -1,11 +1,13 @@
-package com.trademart.tradestore.service;
+package com.trademart.tradeexpiry.service;
 
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import org.springframework.stereotype.Service;
 
+import com.trademart.tradestore.service.ClockService;
+
 /** Basic validation rules for incoming trades (moved from trade-store). */
-@Service
+@Service("tradeExpiryTradeValidationService")
 public class TradeValidationService {
   private final ClockService clockService;
 
@@ -24,7 +26,8 @@ public class TradeValidationService {
       ZonedDateTime nowUtc = ZonedDateTime.ofInstant(clockService.nowUtc(), ZoneId.of("UTC"));
       java.time.LocalDate todayUtc = nowUtc.toLocalDate();
       if (maturityDate.isBefore(todayUtc)) {
-        throw new IllegalArgumentException("maturityDate must not be in the past");
+        // Use same human-friendly message as other modules/tests
+        throw new IllegalArgumentException("maturity date is in the past");
       }
     }
   }

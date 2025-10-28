@@ -1,8 +1,9 @@
-package com.trademart.tradestore.repository;
+package com.trademart.tradeexpiry.repository;
 
-import com.trademart.tradestore.model.TradeEntity;
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import com.trademart.tradeexpiry.model.TradeEntity;
 
 public interface TradeRepositoryCustom {
   TradeEntity upsertTrade(

@@ -29,7 +29,8 @@ public class TradeValidationService {
       ZonedDateTime nowUtc = ZonedDateTime.ofInstant(clockService.nowUtc(), ZoneId.of("UTC"));
       java.time.LocalDate todayUtc = nowUtc.toLocalDate();
       if (maturityDate.isBefore(todayUtc)) {
-        throw new TradeValidationException("maturityDate must not be in the past");
+        // Message intentionally matches integration test and expiry module wording
+        throw new TradeValidationException("maturity date is in the past");
       }
     }
   }

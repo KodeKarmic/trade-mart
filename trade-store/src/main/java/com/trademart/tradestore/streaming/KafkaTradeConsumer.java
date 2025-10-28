@@ -11,10 +11,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Kafka consumer that reads trade messages (JSON) and persists them via
- * TradeService.
- * It increments/decrements an in-memory counter so we can expose the backlog to
- * an autoscaler.
+ * Kafka consumer that reads trade messages (JSON) and persists them via TradeService. It
+ * increments/decrements an in-memory counter so we can expose the backlog to an autoscaler.
  */
 @Component
 public class KafkaTradeConsumer {
@@ -31,7 +29,9 @@ public class KafkaTradeConsumer {
     this.state = state;
   }
 
-  @KafkaListener(topics = "${kafka.topic.trades:trades}", groupId = "${kafka.consumer.group-id:trade-store-group}")
+  @KafkaListener(
+      topics = "${kafka.topic.trades:trades}",
+      groupId = "${kafka.consumer.group-id:trade-store-group}")
   @Observed(name = "trade.consumer.process")
   public void consume(String message) {
     state.increment();
